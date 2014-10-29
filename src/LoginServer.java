@@ -91,26 +91,28 @@ public class LoginServer extends Thread {
                 in = new BufferedReader(inRaw);
                 out = new PrintWriter(new BufferedWriter(outRaw));
 
-                String username = in.readLine();
-                String password = in.readLine();
+                String request = in.readLine();
 
-                boolean isValidLogin = false;
+                System.out.println("New request: " + request);
 
-                System.out.println("A: " + username + " - B: " + password);
+                switch (request) {
 
+                    case "guestLogin":
+                        handleGuestLogin(in,out);
+                        break;
 
-                if(isValidLogin) {
-                    out.write("Success\n");
+                    case "login":
+                        handleLogin(in,out);
+                        break;
+
                 }
-                else {
-                    out.write("Fail\n");
-                }
-                out.flush();
 
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
+                /*
                 try {
+
                     if (inRaw != null) {
                         inRaw.close();
                     }
@@ -123,13 +125,53 @@ public class LoginServer extends Thread {
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
-                }
+                }*/
 
             }
 
         }
 
     }
+
+    private void handleGuestLogin(BufferedReader in, PrintWriter out) throws IOException {
+
+        //TODO: Set up guest ID
+        out.println("Guest9001");
+        out.flush();
+    }
+
+    private void handleLogin(BufferedReader in, PrintWriter out) throws IOException {
+        String username = in.readLine();
+        String password = in.readLine();
+
+        boolean isValidLogin = false;
+
+        //TODO: check username & password
+
+        //TODO: Remove test
+        if(username.equals("test")) {
+            isValidLogin = true;
+        }
+
+        System.out.println("u: " + username + " - p: " + password);
+
+        if(isValidLogin) {
+            out.write("Success\n");
+        }
+        else {
+            out.write("Fail\n");
+        }
+        out.flush();
+    }
+
+
+
+
+
+
+
+
+
 
     private static void printSocketInfo(SSLSocket s) {
         System.out.println("Socket class: " + s.getClass());
