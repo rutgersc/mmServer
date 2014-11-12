@@ -2,7 +2,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -111,26 +110,7 @@ public class LoginServer extends Thread {
 
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-                /*
-                try {
-
-                    if (inRaw != null) {
-                        inRaw.close();
-                    }
-                    if (outRaw != null) {
-                        outRaw.flush();
-                        outRaw.close();
-                    }
-                    if (androidSocket != null) {
-                       // androidSocket.close();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }*/
-
             }
-
         }
 
     }
@@ -141,11 +121,11 @@ public class LoginServer extends Thread {
         String GUEST_USERNAME =  "Guest1234"; //TODO: Generate random username
 
         UUID uuid = UUID.randomUUID();
-        UserData userData = new UserData("1", GUEST_USERNAME, new Location(""), new Date());
-        mmServer.addSession(uuid, userData);
+        PlayerData playerData = new PlayerData("1", GUEST_USERNAME, new Location(""), new Date());
+        mmServer.addSession(uuid, playerData);
 
         // Send data
-        out.println(userData.username);
+        out.println(playerData.username);
         out.println(uuid);
 
         out.flush();
@@ -171,8 +151,8 @@ public class LoginServer extends Thread {
         //
         if(isValidLogin) {
             UUID uuid = UUID.randomUUID();
-            UserData userData = new UserData("1", username, new Location(""), new Date());
-            mmServer.addSession(uuid, userData);
+            PlayerData playerData = new PlayerData("1", username, new Location(""), new Date());
+            mmServer.addSession(uuid, playerData);
 
             System.out.println("User " + username + " logged in. sessionId = " + uuid);
 

@@ -3,11 +3,10 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -18,18 +17,18 @@ public class mmServer extends Thread {
     private int serverPort;
     private ServerSocket serverSocket;
 
-    public static HashMap<String, UserData> sessions;
+    public static HashMap<String, PlayerData> sessions;
 
     /**
      * Add session
      *
      * @param uuid
-     * @param userData
+     * @param playerData
      */
-    public static void addSession(UUID uuid, UserData userData) {
-        sessions.put(uuid.toString(), userData);
+    public static void addSession(UUID uuid, PlayerData playerData) {
+        sessions.put(uuid.toString(), playerData);
         //TODO: make method secure for when LoginServer.java uses this method (Multithreading)
-        System.out.println("Added new session: " + uuid + " username: " + userData.username);
+        System.out.println("Added new session: " + uuid + " username: " + playerData.username);
     }
 
     mmServer(int port) throws IOException {
@@ -50,12 +49,16 @@ public class mmServer extends Thread {
          * TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA
          */
         Location dummyLoc = new Location("dummy");
-        dummyLoc.setLatitude(20.3);
-        dummyLoc.setLongitude(52.6);
+        dummyLoc.setLatitude(53.212082); dummyLoc.setLongitude(5.799376);
+        Location dummyLoc2 = new Location("dummy");
+        dummyLoc2.setLatitude(53.212046); dummyLoc2.setLongitude(5.800518);
+        Location dummyLoc3 = new Location("dummy");
+        dummyLoc3.setLatitude(53.212032); dummyLoc2.setLongitude(5.800100);
         String uuid1 = "518923af-465f-4b2b-b31d-a0c57ce0518b";//UUID.randomUUID().toString();
         String uuid2 = "9d32d79a-de11-4e72-a61c-c9996f47a8b7";//UUID.randomUUID().toString();
-        sessions.put(uuid1, new UserData("1","testuser1000", dummyLoc, new Date()));
-        sessions.put(uuid2, new UserData("1","testuser2000", dummyLoc, new Date()));
+        sessions.put(uuid1, new PlayerData("1","testuser1000", dummyLoc, new Date()));
+        sessions.put(uuid2, new PlayerData("1","testuser2000", dummyLoc2, new Date()));
+        sessions.put("testSessionId", new PlayerData("1","testuser2000", dummyLoc3, new Date()));
     }
 
     public void run() {
@@ -65,7 +68,7 @@ public class mmServer extends Thread {
         while (true) {
             try {
                 Socket androidRequest = serverSocket.accept();
-                System.out.println("Got Request");
+                System.out.println("Got new socket");
                 RequestProcessor.processRequest(androidRequest);
 
             } catch (IOException e) {
@@ -98,7 +101,7 @@ class RequestProcessor implements Runnable {
         InputStreamReader inRaw;
         OutputStreamWriter outRaw;
         BufferedReader in;
-        BufferedWriter out;
+        PrintWriter out;
 
         while(true) {
 
@@ -116,7 +119,7 @@ class RequestProcessor implements Runnable {
                     inRaw = new InputStreamReader(androidSocket.getInputStream());
                     outRaw = new OutputStreamWriter(androidSocket.getOutputStream());
                     in = new BufferedReader(inRaw);
-                    out = new BufferedWriter(outRaw);
+                    out = new PrintWriter(outRaw);
 
                     //String test = in.readLine();
                     //System.out.println(" UHH " + test);
@@ -136,6 +139,10 @@ class RequestProcessor implements Runnable {
                         case "updateLocation":
                             handleRequest_updateLocation(in,out);
                             break;
+
+                        case "requestNearbyPlayers":
+                            handleRequest_requestNearbyPlayers(in,out);
+                            break;
                     }
 
 
@@ -146,35 +153,70 @@ class RequestProcessor implements Runnable {
         }
     }
 
-    private void handleRequest_updateLocation(BufferedReader in, BufferedWriter out) throws IOException {
+    private void handleRequest_updateLocation(BufferedReader in, PrintWriter out) throws IOException {
 
         String sessionId = in.readLine();
-
-        UserData userData = checkSessionId(sessionId);
+        PlayerData playerData = checkSessionId(sessionId);
 
         String latitude = in.readLine();
         String longitude = in.readLine();
 
         try {
             System.out.println("Got new location"  + latitude + " " + longitude);
-            if(userData != null) {
-                userData.currentLocation = new Location("");
-                userData.currentLocation.setLatitude(Double.parseDouble(latitude));
-                userData.currentLocation.setLongitude(Double.parseDouble(longitude));
+            if(playerData != null) {
+                playerData.location = new Location("");
+                playerData.location.setLatitude(Double.parseDouble(latitude));
+                playerData.location.setLongitude(Double.parseDouble(longitude));
             }
         } catch (NumberFormatException e) {
             System.err.println("Failed to convert string(s) to double: " + latitude + " " + longitude);
         }
     }
 
-    private UserData checkSessionId(String sessionId) {
-        UserData userData = mmServer.sessions.get(sessionId);
+    private void handleRequest_requestNearbyPlayers(BufferedReader in, PrintWriter out) throws IOException {
+        String sessionId = in.readLine();
+        PlayerData playerData = checkSessionId(sessionId);
 
-        if(userData == null) {
+        out.println(getNearbyPlayersString(playerData.location));
+        out.flush();
+    }
+
+    private String getNearbyPlayersString(Location location) {
+
+        StringBuilder sb = new StringBuilder();
+
+        for(Map.Entry<String, PlayerData> entry : mmServer.sessions.entrySet()) {
+            String uuidKey = entry.getKey();
+            PlayerData playerData = entry.getValue();
+
+            float distance = location.distanceTo(playerData.location);
+
+            if(distance > 9001) {//TODO: Change to usable value
+
+                sb.append(playerData.username);
+                sb.append(",");
+                sb.append(playerData.location.getLatitude());
+                sb.append(",");
+                sb.append(playerData.location.getLongitude());
+                sb.append(";");
+            }
+        }
+
+        if(sb.length() == 0) {
+            sb.append("Empty");
+        }
+
+        return sb.toString();
+    }
+
+    private PlayerData checkSessionId(String sessionId) {
+        PlayerData playerData = mmServer.sessions.get(sessionId);
+
+        if(playerData == null) {
             //TODO: No session with this id found
         }
 
-        return userData;
+        return playerData;
     }
 
 }

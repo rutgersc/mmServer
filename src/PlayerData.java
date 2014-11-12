@@ -1,16 +1,16 @@
 import java.util.Date;
 
-public class UserData {
+public class PlayerData {
     String databaseId;
     String username;
 
-    Location currentLocation;
+    Location location;
     Date updateDate;
 
-    public UserData(String databaseId, String username, Location currentLocation, Date updateDate) {
+    public PlayerData(String databaseId, String username, Location currentLocation, Date updateDate) {
         this.databaseId = databaseId;
         this.username = username;
-        this.currentLocation = currentLocation;
+        this.location = currentLocation;
         this.updateDate = updateDate;
     }
 }
