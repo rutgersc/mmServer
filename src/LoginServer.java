@@ -12,6 +12,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.Date;
+import java.util.UUID;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -133,10 +135,19 @@ public class LoginServer extends Thread {
 
     }
 
+
     private void handleGuestLogin(BufferedReader in, PrintWriter out) throws IOException {
 
-        //TODO: Set up guest ID
-        out.println("Guest9001");
+        String GUEST_USERNAME =  "Guest1234"; //TODO: Generate random username
+
+        UUID uuid = UUID.randomUUID();
+        UserData userData = new UserData("1", GUEST_USERNAME, new Location(""), new Date());
+        mmServer.addSession(uuid, userData);
+
+        // Send data
+        out.println(userData.username);
+        out.println(uuid);
+
         out.flush();
     }
 
@@ -144,19 +155,28 @@ public class LoginServer extends Thread {
         String username = in.readLine();
         String password = in.readLine();
 
+        // Validate the login
+        //
         boolean isValidLogin = false;
 
         //TODO: check username & password
 
-        //TODO: Remove test
-        if(username.equals("test")) {
+        if(username.equals("test")) { //TODO: Remove this test login
             isValidLogin = true;
         }
 
         System.out.println("u: " + username + " - p: " + password);
 
+        // Finish logging in
+        //
         if(isValidLogin) {
-            out.write("Success\n");
+            UUID uuid = UUID.randomUUID();
+            UserData userData = new UserData("1", username, new Location(""), new Date());
+            mmServer.addSession(uuid, userData);
+
+            System.out.println("User " + username + " logged in. sessionId = " + uuid);
+
+            out.println(uuid);
         }
         else {
             out.write("Fail\n");

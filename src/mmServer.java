@@ -1,7 +1,14 @@
+
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by hoi on 10/24/14.
@@ -10,6 +17,20 @@ public class mmServer extends Thread {
 
     private int serverPort;
     private ServerSocket serverSocket;
+
+    public static HashMap<String, UserData> sessions;
+
+    /**
+     * Add session
+     *
+     * @param uuid
+     * @param userData
+     */
+    public static void addSession(UUID uuid, UserData userData) {
+        sessions.put(uuid.toString(), userData);
+        //TODO: make method secure for when LoginServer.java uses this method (Multithreading)
+        System.out.println("Added new session: " + uuid + " username: " + userData.username);
+    }
 
     mmServer(int port) throws IOException {
         this.serverPort = port;
@@ -23,6 +44,18 @@ public class mmServer extends Thread {
             (new Thread(new RequestProcessor())).start();
             System.out.println("RequestProcessor #" + i + " - started");
         }
+
+        sessions = new HashMap<>();
+        /**
+         * TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA
+         */
+        Location dummyLoc = new Location("dummy");
+        dummyLoc.setLatitude(20.3);
+        dummyLoc.setLongitude(52.6);
+        String uuid1 = "518923af-465f-4b2b-b31d-a0c57ce0518b";//UUID.randomUUID().toString();
+        String uuid2 = "9d32d79a-de11-4e72-a61c-c9996f47a8b7";//UUID.randomUUID().toString();
+        sessions.put(uuid1, new UserData("1","testuser1000", dummyLoc, new Date()));
+        sessions.put(uuid2, new UserData("1","testuser2000", dummyLoc, new Date()));
     }
 
     public void run() {
@@ -89,15 +122,22 @@ class RequestProcessor implements Runnable {
                     //System.out.println(" UHH " + test);
 
                     int c;
-                    StringBuffer request = new StringBuffer();
+                    StringBuilder requestB = new StringBuilder();
                     while(true) {
                         c = inRaw.read();
-                        request.append((char)c);
+                        requestB.append((char)c);
                         if (c == '\r' || c == '\n') break;
                     }
+                    String request = requestB.toString();
                     System.out.println("Got request: " + request);
 
                     // TODO: Process request
+                    switch (request) {
+                        case "updateLocation":
+                            handleRequest_updateLocation(in,out);
+                            break;
+                    }
+
 
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -105,6 +145,38 @@ class RequestProcessor implements Runnable {
             }
         }
     }
+
+    private void handleRequest_updateLocation(BufferedReader in, BufferedWriter out) throws IOException {
+
+        String sessionId = in.readLine();
+
+        UserData userData = checkSessionId(sessionId);
+
+        String latitude = in.readLine();
+        String longitude = in.readLine();
+
+        try {
+            System.out.println("Got new location"  + latitude + " " + longitude);
+            if(userData != null) {
+                userData.currentLocation = new Location("");
+                userData.currentLocation.setLatitude(Double.parseDouble(latitude));
+                userData.currentLocation.setLongitude(Double.parseDouble(longitude));
+            }
+        } catch (NumberFormatException e) {
+            System.err.println("Failed to convert string(s) to double: " + latitude + " " + longitude);
+        }
+    }
+
+    private UserData checkSessionId(String sessionId) {
+        UserData userData = mmServer.sessions.get(sessionId);
+
+        if(userData == null) {
+            //TODO: No session with this id found
+        }
+
+        return userData;
+    }
+
 }
 
 
