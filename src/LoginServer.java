@@ -25,6 +25,7 @@ import javax.net.ssl.TrustManagerFactory;
 public class LoginServer extends Thread {
 
     private SSLServerSocket serverSocket;
+    protected int guestCounter = 1;
 
     LoginServer(int serverPort) throws IOException {
 
@@ -115,10 +116,14 @@ public class LoginServer extends Thread {
 
     }
 
+    private String generateGuestUsername() {
+        guestCounter++;
+        return "Guest" + guestCounter;
+    }
 
     private void handleGuestLogin(BufferedReader in, PrintWriter out) throws IOException {
 
-        String GUEST_USERNAME =  "Guest1234"; //TODO: Generate random username
+        String GUEST_USERNAME = generateGuestUsername();
 
         UUID uuid = UUID.randomUUID();
         PlayerData playerData = new PlayerData("1", GUEST_USERNAME, new Location(""), new Date());

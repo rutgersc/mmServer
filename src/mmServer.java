@@ -109,47 +109,44 @@ class RequestProcessor implements Runnable {
                 while (pool.isEmpty()) {
                     try {
                         pool.wait();
-                    } catch (InterruptedException e) { }
+                    } catch (InterruptedException e) {
+                    }
                 }
 
                 androidSocket = pool.remove(0);
+            }
+            try {
 
-                try {
+                inRaw = new InputStreamReader(androidSocket.getInputStream());
+                outRaw = new OutputStreamWriter(androidSocket.getOutputStream());
+                in = new BufferedReader(inRaw);
+                out = new PrintWriter(outRaw);
 
-                    inRaw = new InputStreamReader(androidSocket.getInputStream());
-                    outRaw = new OutputStreamWriter(androidSocket.getOutputStream());
-                    in = new BufferedReader(inRaw);
-                    out = new PrintWriter(outRaw);
+                while(true) {
+                    String request = in.readLine();
 
-                    //String test = in.readLine();
-                    //System.out.println(" UHH " + test);
-
-                    int c;
-                    StringBuilder requestB = new StringBuilder();
-                    while(true) {
-                        c = inRaw.read();
-                        requestB.append((char)c);
-                        if (c == '\r' || c == '\n') break;
-                    }
-                    String request = requestB.toString();
                     System.out.println("Got request: " + request);
+
+                    if(request == null) {
+                        break;
+                    }
 
                     // TODO: Process request
                     switch (request) {
                         case "updateLocation":
-                            handleRequest_updateLocation(in,out);
+                            handleRequest_updateLocation(in, out);
                             break;
 
                         case "requestNearbyPlayers":
-                            handleRequest_requestNearbyPlayers(in,out);
+                            handleRequest_requestNearbyPlayers(in, out);
                             break;
                     }
-
-
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
+            } catch (IOException e) {
+
+                System.out.println("Fuck dat shit");
             }
+
         }
     }
 
@@ -179,6 +176,8 @@ class RequestProcessor implements Runnable {
 
         out.println(getNearbyPlayersString(playerData.location));
         out.flush();
+
+        System.out.println("Sent nearby players to " + playerData.username);
     }
 
     private String getNearbyPlayersString(Location location) {
