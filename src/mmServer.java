@@ -18,18 +18,41 @@ public class mmServer extends Thread {
     private ServerSocket serverSocket;
 
     public static HashMap<String, PlayerData> sessions;
+    private static final Object sessionsLock = new Object();
 
     /**
      * Add session
      *
      * @param uuid
-     * @param playerData
+     * @param username
      */
-    public static void addSession(UUID uuid, PlayerData playerData) {
-        sessions.put(uuid.toString(), playerData);
+    public static synchronized void addOrRetreiveExistingSession(String uuid, String username) {
+
         //TODO: make method secure for when LoginServer.java uses this method (Multithreading)
-        System.out.println("Added new session: " + uuid + " username: " + playerData.username);
+
+        PlayerData playerData;
+        synchronized (sessionsLock) {
+
+            //TODO: Check if uuid is expired (?)
+            playerData = sessions.get(uuid);
+
+            if(playerData == null) {
+                playerData = new PlayerData("1", username, new Location(""), new Date());
+            }
+
+            sessions.put(uuid, playerData);
+        }
+
+        System.out.println("Added new session: " + uuid + " username: " + username);
     }
+
+    public static boolean isValidExistingUuid(String uuid) {
+
+        synchronized (sessionsLock) {
+            return sessions.containsKey(uuid);
+        }
+    }
+
 
     mmServer(int port) throws IOException {
         this.serverPort = port;
@@ -122,44 +145,56 @@ class RequestProcessor implements Runnable {
                 in = new BufferedReader(inRaw);
                 out = new PrintWriter(outRaw);
 
+                String sessionId = in.readLine();
+                PlayerData playerData = checkSessionId(sessionId);
+
+                System.out.println("+++++++ Player " + playerData.username + " Connected");
+
                 while(true) {
                     String request = in.readLine();
 
-                    System.out.println("Got request: " + request);
-
                     if(request == null) {
+                        System.out.println("------- Player " + playerData.username + " Disconnected");
+                        // TODO: remove from active players
                         break;
                     }
+
+                    System.out.println("[" + playerData.username + "] Request: " + request);
 
                     // TODO: Process request
                     switch (request) {
                         case "updateLocation":
-                            handleRequest_updateLocation(in, out);
+                            handleRequest_updateLocation(playerData, in, out);
                             break;
 
                         case "requestNearbyPlayers":
-                            handleRequest_requestNearbyPlayers(in, out);
+                            handleRequest_requestNearbyPlayers(playerData, in, out);
+                            break;
+
+                        case "searchGame":
+                            handleRequest_searchGame(playerData, in, out);
+                            break;
+
+                        case "stopSearchGame":
+                            handleRequest_stopSearchGame(playerData, in, out);
                             break;
                     }
                 }
-            } catch (IOException e) {
 
-                System.out.println("Fuck dat shit");
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
         }
     }
 
-    private void handleRequest_updateLocation(BufferedReader in, PrintWriter out) throws IOException {
-
-        String sessionId = in.readLine();
-        PlayerData playerData = checkSessionId(sessionId);
+    private void handleRequest_updateLocation(PlayerData playerData, BufferedReader in, PrintWriter out) throws IOException {
 
         String latitude = in.readLine();
         String longitude = in.readLine();
 
         try {
-            System.out.println("Got new location"  + latitude + " " + longitude);
+            System.out.println("[" + playerData.username + "] New location: "  + latitude + " " + longitude);
             if(playerData != null) {
                 playerData.location = new Location("");
                 playerData.location.setLatitude(Double.parseDouble(latitude));
@@ -170,14 +205,12 @@ class RequestProcessor implements Runnable {
         }
     }
 
-    private void handleRequest_requestNearbyPlayers(BufferedReader in, PrintWriter out) throws IOException {
-        String sessionId = in.readLine();
-        PlayerData playerData = checkSessionId(sessionId);
+    private void handleRequest_requestNearbyPlayers(PlayerData playerData, BufferedReader in, PrintWriter out) throws IOException {
 
         out.println(getNearbyPlayersString(playerData.location));
         out.flush();
 
-        System.out.println("Sent nearby players to " + playerData.username);
+        System.out.println("[" + playerData.username + "] Sent nearby players");
     }
 
     private String getNearbyPlayersString(Location location) {
@@ -206,6 +239,16 @@ class RequestProcessor implements Runnable {
         }
 
         return sb.toString();
+    }
+
+    private void handleRequest_searchGame(PlayerData playerData, BufferedReader in, PrintWriter out) throws IOException {
+
+        //TODO: Fix Searching for game
+    }
+
+    private void handleRequest_stopSearchGame(PlayerData playerData, BufferedReader in, PrintWriter out) throws IOException {
+
+        //TODO: Fix Stop Searching for game
     }
 
     private PlayerData checkSessionId(String sessionId) {

@@ -86,7 +86,7 @@ public class LoginServer extends Thread {
 
             try {
                 androidSocket = (SSLSocket) serverSocket.accept();
-                printSocketInfo(androidSocket);
+                //printSocketInfo(androidSocket);
 
                 inRaw = new InputStreamReader(androidSocket.getInputStream());
                 outRaw = new OutputStreamWriter(androidSocket.getOutputStream());
@@ -126,11 +126,10 @@ public class LoginServer extends Thread {
         String GUEST_USERNAME = generateGuestUsername();
 
         UUID uuid = UUID.randomUUID();
-        PlayerData playerData = new PlayerData("1", GUEST_USERNAME, new Location(""), new Date());
-        mmServer.addSession(uuid, playerData);
+        mmServer.addOrRetreiveExistingSession(uuid.toString(), GUEST_USERNAME);
 
         // Send data
-        out.println(playerData.username);
+        out.println(GUEST_USERNAME);
         out.println(uuid);
 
         out.flush();
@@ -139,6 +138,7 @@ public class LoginServer extends Thread {
     private void handleLogin(BufferedReader in, PrintWriter out) throws IOException {
         String username = in.readLine();
         String password = in.readLine();
+        String existingUuid = in.readLine();
 
         // Validate the login
         //
@@ -155,9 +155,17 @@ public class LoginServer extends Thread {
         // Finish logging in
         //
         if(isValidLogin) {
-            UUID uuid = UUID.randomUUID();
-            PlayerData playerData = new PlayerData("1", username, new Location(""), new Date());
-            mmServer.addSession(uuid, playerData);
+
+            String uuid = null;
+            if(!existingUuid.equals("none")) {
+                uuid = existingUuid;
+                System.out.println("User " + username + " logged in with existing UUID: " + uuid);
+            }
+            if(uuid == null || !mmServer.isValidExistingUuid(existingUuid)) { // if no existing uuid was sent or the uuid was not valid.
+                uuid = UUID.randomUUID().toString(); // Generate a new id
+            }
+
+            mmServer.addOrRetreiveExistingSession(uuid, username);
 
             System.out.println("User " + username + " logged in. sessionId = " + uuid);
 
