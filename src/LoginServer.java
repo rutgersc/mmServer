@@ -97,16 +97,18 @@ public class LoginServer extends Thread {
 
                 System.out.println("New request: " + request);
 
-                switch (request) {
+                if (request != null) {
+                    switch (request) {
 
-                    case "guestLogin":
-                        handleGuestLogin(in,out);
-                        break;
+                        case "guestLogin":
+                            handleGuestLogin(in, out);
+                            break;
 
-                    case "login":
-                        handleLogin(in,out);
-                        break;
+                        case "login":
+                            handleLogin(in, out);
+                            break;
 
+                    }
                 }
 
             } catch (IOException e) {
