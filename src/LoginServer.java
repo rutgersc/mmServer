@@ -147,7 +147,8 @@ public class LoginServer extends Thread {
 
         //TODO: check username & password
 
-        if(username.equals("test")) { //TODO: Remove this test login
+        if(username.equals("test") ||
+            username.equals("rutger")) { //TODO: Remove this test login
             isValidLogin = true;
         }
 

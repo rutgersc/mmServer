@@ -57,29 +57,36 @@ public class mainServer extends Thread {
         this.serverSocket = new ServerSocket(serverPort);
 
         // Set up how many threads will handle the requests
-        int numberOfRequestProcessors = 2;
+        int numberOfRequestProcessors = 15;
         System.out.println("Setting up " + numberOfRequestProcessors + " RequestProcessors");
 
-        for(int i = 0; i < 2; i++) {
+        for(int i = 0; i < numberOfRequestProcessors; i++) {
             (new Thread(new RequestProcessor())).start();
             System.out.println("RequestProcessor #" + i + " - started");
         }
 
         sessions = new HashMap<>();
+
+        Location dummyLoc = new Location("dummy");
+        dummyLoc.setLatitude(53.212032); dummyLoc.setLongitude(5.800100);
+        PlayerData dummy = new PlayerData("1","testuser3000", dummyLoc, new Date());
+        sessions.put("ec1d2602-0397-48f7-9bd9-599b26ac80d5", dummy);
+        generateDummyPlayers(dummyLoc);
+    }
+
+    public void generateDummyPlayers(Location startLocation) {
         /**
          * TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA
          */
         Location dummyLoc = new Location("dummy");
-        dummyLoc.setLatitude(53.212082); dummyLoc.setLongitude(5.799376);
+        dummyLoc.setLatitude(startLocation.getLatitude() + 0.1); dummyLoc.setLongitude(startLocation.getLongitude() + 0.1);
         Location dummyLoc2 = new Location("dummy");
-        dummyLoc2.setLatitude(53.212046); dummyLoc2.setLongitude(5.800518);
-        Location dummyLoc3 = new Location("dummy");
-        dummyLoc3.setLatitude(53.212032); dummyLoc2.setLongitude(5.800100);
+        dummyLoc2.setLatitude(startLocation.getLatitude() - 0.1); dummyLoc2.setLongitude(startLocation.getLongitude() - 0.1);
+
         String uuid1 = "518923af-465f-4b2b-b31d-a0c57ce0518b";//UUID.randomUUID().toString();
         String uuid2 = "9d32d79a-de11-4e72-a61c-c9996f47a8b7";//UUID.randomUUID().toString();
         sessions.put(uuid1, new PlayerData("1","testuser1000", dummyLoc, new Date()));
         sessions.put(uuid2, new PlayerData("1","testuser2000", dummyLoc2, new Date()));
-        sessions.put("testSessionId", new PlayerData("1","testuser2000", dummyLoc3, new Date()));
     }
 
     public void run() {
@@ -150,22 +157,26 @@ class RequestProcessor implements Runnable {
                 String sessionId = in.readLine();
                 PlayerData playerData = onPlayerConnected(sessionId);
 
-                System.out.println("+++++++ Player " + playerData.username + " Connected: " + connectionType);
+                if (playerData != null) {
 
-                switch (connectionType) {
+                    System.out.println("+++++++ Player " + playerData.username + " Connected: " + connectionType);
 
-                    case "lobbySession":
-                        handleConnection_lobbySession(sessionId, playerData, in, out);
-                        break;
+                    switch (connectionType) {
 
-                    case "searchGame":
-                        handleConnection_searchGame(sessionId, playerData, in, out);
-                        break;
+                        case "lobbySession":
+                            handleConnection_lobbySession(sessionId, playerData, in, out);
+                            break;
+
+                        case "searchGame":
+                            handleConnection_searchGame(sessionId, playerData, in, out, androidSocket);
+                            break;
+                    }
                 }
 
 
             } catch (IOException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
+                System.err.println("connection interrupted");
             }
 
         }
@@ -219,11 +230,10 @@ class RequestProcessor implements Runnable {
 
         try {
             System.out.println("[" + playerData.username + "] New location: "  + latitude + " " + longitude);
-            if(playerData != null) {
-                playerData.location = new Location("");
-                playerData.location.setLatitude(Double.parseDouble(latitude));
-                playerData.location.setLongitude(Double.parseDouble(longitude));
-            }
+            playerData.location = new Location("");
+            playerData.location.setLatitude(Double.parseDouble(latitude));
+            playerData.location.setLongitude(Double.parseDouble(longitude));
+
         } catch (NumberFormatException e) {
             System.err.println("Failed to convert string(s) to double: " + latitude + " " + longitude);
         }
@@ -263,7 +273,7 @@ class RequestProcessor implements Runnable {
     }
 
 
-    public void handleConnection_searchGame(String sessionId, PlayerData playerData, BufferedReader in, PrintWriter out) throws IOException {
+    public void handleConnection_searchGame(String sessionId, PlayerData playerData, BufferedReader in, PrintWriter out, Socket socket) throws IOException {
 
         while(true) {
             String request = in.readLine();
@@ -281,7 +291,7 @@ class RequestProcessor implements Runnable {
                 case "startSearch":
                     String gameType = in.readLine();
 
-                    PlayerSession playerSession = new PlayerSession(sessionId, playerData, in, out);
+                    PlayerSession playerSession = new PlayerSession(sessionId, playerData, in, out, socket);
                     GameLobbySession gameLobbySession = matchMaker.searchGame(playerSession, gameType); // TODO: Fix gameType
 
                     if(gameLobbySession == null) { // if(No other nearby player found)
@@ -298,13 +308,29 @@ class RequestProcessor implements Runnable {
                         matchMaker.removePlayer(gameLobbySession.queuedPlayer.sessionId);
 
                         gameLobbySession.sendGameFound();
-                        boolean allPlayersAccepted = gameLobbySession.getPlayersConfirmation();
+                    }
+                    break;
 
-                        if(allPlayersAccepted) {
-                            gameLobbySession.sendStartGameCommand();
-                            System.out.println("[" + playerData.username + "] Started a game with " + gameLobbySession.queuedPlayer.playerData.username);
+                case "acceptGameChoice":
+                    String gameId = in.readLine();
+                    String gameAcceptedS = in.readLine();
+                    Boolean gameAccepted = Boolean.valueOf(gameAcceptedS);
+                    GameLobbySession gls = MatchMaker.gameLobbies.get(gameId);
+
+                    if(gls != null) {
+
+                        if(gameAccepted) {
+                            gls.playerAccepted(playerData.username);
+                            if (gls.allPlayersAccepted()) {
+                                gls.sendStartGameCommand();
+                                System.out.println("Game started.................");
+                            }
+                        }
+                        else {
+                            gls.cancelGame();
                         }
                     }
+
                     break;
             }
         }
