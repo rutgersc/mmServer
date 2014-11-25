@@ -7,12 +7,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Created by hoi on 10/24/14.
  */
-public class mmServer extends Thread {
+public class mainServer extends Thread {
 
     private int serverPort;
     private ServerSocket serverSocket;
@@ -26,10 +25,9 @@ public class mmServer extends Thread {
      * @param uuid
      * @param username
      */
-    public static synchronized void addOrRetreiveExistingSession(String uuid, String username) {
+    public static void addOrRetreiveExistingSession(String uuid, String username) {
 
         //TODO: make method secure for when LoginServer.java uses this method (Multithreading)
-
         PlayerData playerData;
         synchronized (sessionsLock) {
 
@@ -54,7 +52,7 @@ public class mmServer extends Thread {
     }
 
 
-    mmServer(int port) throws IOException {
+    mainServer(int port) throws IOException {
         this.serverPort = port;
         this.serverSocket = new ServerSocket(serverPort);
 
@@ -106,6 +104,8 @@ class RequestProcessor implements Runnable {
     private static LinkedList<Socket> pool = new LinkedList<>();
     private static final Object lock = new Object();
 
+    private static MatchMaker matchMaker = new MatchMaker();
+
     public static void processRequest(Socket request) {
 
         // Add all the requests to a pool. Then whenever
@@ -145,46 +145,70 @@ class RequestProcessor implements Runnable {
                 in = new BufferedReader(inRaw);
                 out = new PrintWriter(outRaw);
 
+                // Player is now in the Lobby
+                String connectionType = in.readLine();
                 String sessionId = in.readLine();
-                PlayerData playerData = checkSessionId(sessionId);
+                PlayerData playerData = onPlayerConnected(sessionId);
 
-                System.out.println("+++++++ Player " + playerData.username + " Connected");
+                System.out.println("+++++++ Player " + playerData.username + " Connected: " + connectionType);
 
-                while(true) {
-                    String request = in.readLine();
+                switch (connectionType) {
 
-                    if(request == null) {
-                        System.out.println("------- Player " + playerData.username + " Disconnected");
-                        // TODO: remove from active players
+                    case "lobbySession":
+                        handleConnection_lobbySession(sessionId, playerData, in, out);
                         break;
-                    }
 
-                    System.out.println("[" + playerData.username + "] Request: " + request);
-
-                    // TODO: Process request
-                    switch (request) {
-                        case "updateLocation":
-                            handleRequest_updateLocation(playerData, in, out);
-                            break;
-
-                        case "requestNearbyPlayers":
-                            handleRequest_requestNearbyPlayers(playerData, in, out);
-                            break;
-
-                        case "searchGame":
-                            handleRequest_searchGame(playerData, in, out);
-                            break;
-
-                        case "stopSearchGame":
-                            handleRequest_stopSearchGame(playerData, in, out);
-                            break;
-                    }
+                    case "searchGame":
+                        handleConnection_searchGame(sessionId, playerData, in, out);
+                        break;
                 }
+
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
+        }
+    }
+
+    private PlayerData onPlayerConnected(String sessionId) {
+        PlayerData playerData = mainServer.sessions.get(sessionId);
+
+        if(playerData == null) {
+            //TODO: No session with this id found
+        }
+
+        return playerData;
+    }
+
+    private void onPlayerDisconnected(String sessionId) {
+        // remove from the searching list (
+        matchMaker.removePlayer(sessionId);
+    }
+
+    public void handleConnection_lobbySession(String sessionId, PlayerData playerData, BufferedReader in, PrintWriter out) throws IOException {
+
+        while(true) {
+            String request = in.readLine();
+
+            if(request == null) {
+                System.out.println("------- Player " + playerData.username + " Disconnected");
+                onPlayerDisconnected(sessionId);
+                break;
+            }
+
+            System.out.println("[" + playerData.username + "] Request: " + request);
+
+            // TODO: Process request
+            switch (request) {
+                case "updateLocation":
+                    handleRequest_updateLocation(playerData, in, out);
+                    break;
+
+                case "requestNearbyPlayers":
+                    handleRequest_requestNearbyPlayers(playerData, in, out);
+                    break;
+            }
         }
     }
 
@@ -217,19 +241,16 @@ class RequestProcessor implements Runnable {
 
         StringBuilder sb = new StringBuilder();
 
-        for(Map.Entry<String, PlayerData> entry : mmServer.sessions.entrySet()) {
-            String uuidKey = entry.getKey();
-            PlayerData playerData = entry.getValue();
+        for(Map.Entry<String, PlayerData> entry : mainServer.sessions.entrySet()) {
+            PlayerData otherPlayerData = entry.getValue();
 
-            float distance = location.distanceTo(playerData.location);
+            if(Utility.isPlayerNearby(location, otherPlayerData.location)) {
 
-            if(distance > 9001) {//TODO: Change to usable value
-
-                sb.append(playerData.username);
+                sb.append(otherPlayerData.username);
                 sb.append(",");
-                sb.append(playerData.location.getLatitude());
+                sb.append(otherPlayerData.location.getLatitude());
                 sb.append(",");
-                sb.append(playerData.location.getLongitude());
+                sb.append(otherPlayerData.location.getLongitude());
                 sb.append(";");
             }
         }
@@ -241,26 +262,54 @@ class RequestProcessor implements Runnable {
         return sb.toString();
     }
 
-    private void handleRequest_searchGame(PlayerData playerData, BufferedReader in, PrintWriter out) throws IOException {
 
-        //TODO: Fix Searching for game
-    }
+    public void handleConnection_searchGame(String sessionId, PlayerData playerData, BufferedReader in, PrintWriter out) throws IOException {
 
-    private void handleRequest_stopSearchGame(PlayerData playerData, BufferedReader in, PrintWriter out) throws IOException {
+        while(true) {
+            String request = in.readLine();
 
-        //TODO: Fix Stop Searching for game
-    }
+            if(request == null) {
+                System.out.println("---------------- Player " + playerData.username + " Stopped searching");
+                onPlayerDisconnected(sessionId);
+                break;
+            }
 
-    private PlayerData checkSessionId(String sessionId) {
-        PlayerData playerData = mmServer.sessions.get(sessionId);
+            System.out.println("[" + playerData.username + "] Request: " + request);
 
-        if(playerData == null) {
-            //TODO: No session with this id found
+            // TODO: Process request
+            switch (request) {
+                case "startSearch":
+                    String gameType = in.readLine();
+
+                    PlayerSession playerSession = new PlayerSession(sessionId, playerData, in, out);
+                    GameLobbySession gameLobbySession = matchMaker.searchGame(playerSession, gameType); // TODO: Fix gameType
+
+                    if(gameLobbySession == null) { // if(No other nearby player found)
+                        matchMaker.addPlayer(sessionId, playerSession);
+                        System.out.println("[" + playerData.username + "] Started searching for a game");
+
+                        out.println("waitingForPlayer");
+                        out.flush();
+                    }
+                    else { // Found nearby player!
+
+                        System.out.println("[" + playerData.username + "] Found a game");
+
+                        matchMaker.removePlayer(gameLobbySession.queuedPlayer.sessionId);
+
+                        gameLobbySession.sendGameFound();
+                        boolean allPlayersAccepted = gameLobbySession.getPlayersConfirmation();
+
+                        if(allPlayersAccepted) {
+                            gameLobbySession.sendStartGameCommand();
+                            System.out.println("[" + playerData.username + "] Started a game with " + gameLobbySession.queuedPlayer.playerData.username);
+                        }
+                    }
+                    break;
+            }
         }
-
-        return playerData;
     }
-
 }
+
 
 

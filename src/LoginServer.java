@@ -11,7 +11,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.util.Date;
 import java.util.UUID;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -128,7 +127,7 @@ public class LoginServer extends Thread {
         String GUEST_USERNAME = generateGuestUsername();
 
         UUID uuid = UUID.randomUUID();
-        mmServer.addOrRetreiveExistingSession(uuid.toString(), GUEST_USERNAME);
+        mainServer.addOrRetreiveExistingSession(uuid.toString(), GUEST_USERNAME);
 
         // Send data
         out.println(GUEST_USERNAME);
@@ -163,11 +162,11 @@ public class LoginServer extends Thread {
                 uuid = existingUuid;
                 System.out.println("User " + username + " logged in with existing UUID: " + uuid);
             }
-            if(uuid == null || !mmServer.isValidExistingUuid(existingUuid)) { // if no existing uuid was sent or the uuid was not valid.
+            if(uuid == null || !mainServer.isValidExistingUuid(existingUuid)) { // if no existing uuid was sent or the uuid was not valid.
                 uuid = UUID.randomUUID().toString(); // Generate a new id
             }
 
-            mmServer.addOrRetreiveExistingSession(uuid, username);
+            mainServer.addOrRetreiveExistingSession(uuid, username);
 
             System.out.println("User " + username + " logged in. sessionId = " + uuid);
 
