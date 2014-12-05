@@ -2,7 +2,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -12,6 +11,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.UUID;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -24,6 +24,7 @@ import javax.net.ssl.TrustManagerFactory;
 public class LoginServer extends Thread {
 
     private SSLServerSocket serverSocket;
+    protected int guestCounter = 1;
 
     LoginServer(int serverPort) throws IOException {
 
@@ -84,7 +85,7 @@ public class LoginServer extends Thread {
 
             try {
                 androidSocket = (SSLSocket) serverSocket.accept();
-                printSocketInfo(androidSocket);
+                //printSocketInfo(androidSocket);
 
                 inRaw = new InputStreamReader(androidSocket.getInputStream());
                 outRaw = new OutputStreamWriter(androidSocket.getOutputStream());
@@ -95,68 +96,82 @@ public class LoginServer extends Thread {
 
                 System.out.println("New request: " + request);
 
-                switch (request) {
+                if (request != null) {
+                    switch (request) {
 
-                    case "guestLogin":
-                        handleGuestLogin(in,out);
-                        break;
+                        case "guestLogin":
+                            handleGuestLogin(in, out);
+                            break;
 
-                    case "login":
-                        handleLogin(in,out);
-                        break;
+                        case "login":
+                            handleLogin(in, out);
+                            break;
 
+                    }
                 }
 
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-                /*
-                try {
-
-                    if (inRaw != null) {
-                        inRaw.close();
-                    }
-                    if (outRaw != null) {
-                        outRaw.flush();
-                        outRaw.close();
-                    }
-                    if (androidSocket != null) {
-                       // androidSocket.close();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }*/
-
             }
-
         }
 
     }
 
+    private String generateGuestUsername() {
+        guestCounter++;
+        return "Guest" + guestCounter;
+    }
+
     private void handleGuestLogin(BufferedReader in, PrintWriter out) throws IOException {
 
-        //TODO: Set up guest ID
-        out.println("Guest9001");
+        String GUEST_USERNAME = generateGuestUsername();
+
+        UUID uuid = UUID.randomUUID();
+        mainServer.addOrRetreiveExistingSession(uuid.toString(), GUEST_USERNAME);
+
+        // Send data
+        out.println(GUEST_USERNAME);
+        out.println(uuid);
+
         out.flush();
     }
 
     private void handleLogin(BufferedReader in, PrintWriter out) throws IOException {
         String username = in.readLine();
         String password = in.readLine();
+        String existingUuid = in.readLine();
 
+        // Validate the login
+        //
         boolean isValidLogin = false;
 
         //TODO: check username & password
 
-        //TODO: Remove test
-        if(username.equals("test")) {
+        if(username.equals("test") ||
+            username.equals("rutger")) { //TODO: Remove this test login
             isValidLogin = true;
         }
 
         System.out.println("u: " + username + " - p: " + password);
 
+        // Finish logging in
+        //
         if(isValidLogin) {
-            out.write("Success\n");
+
+            String uuid = null;
+            if(!existingUuid.equals("none")) {
+                uuid = existingUuid;
+                System.out.println("User " + username + " logged in with existing UUID: " + uuid);
+            }
+            if(uuid == null || !mainServer.isValidExistingUuid(existingUuid)) { // if no existing uuid was sent or the uuid was not valid.
+                uuid = UUID.randomUUID().toString(); // Generate a new id
+            }
+
+            mainServer.addOrRetreiveExistingSession(uuid, username);
+
+            System.out.println("User " + username + " logged in. sessionId = " + uuid);
+
+            out.println(uuid);
         }
         else {
             out.write("Fail\n");

@@ -32,7 +32,7 @@ public class Main {
 
             //Set up matchmaking server
             if(enableMatchmakingServer) {
-                (new mmServer(port)).start();
+                (new mainServer(port)).start();
             }
 
         } catch (IOException e) {
