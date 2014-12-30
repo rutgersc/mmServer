@@ -1,3 +1,5 @@
+package minor;
+
 public class Utility {
 
     public static boolean isPlayerNearby(Location firstLocation, Location secondLocation) {

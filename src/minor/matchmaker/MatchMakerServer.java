@@ -1,4 +1,4 @@
-
+package minor.matchmaker;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -8,10 +8,14 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import minor.Location;
+import minor.Utility;
+import minor.game.GameSessionsServer;
+
 /**
  * Created by hoi on 10/24/14.
  */
-public class mainServer extends Thread {
+public class MatchMakerServer extends Thread {
 
     private int serverPort;
     private ServerSocket serverSocket;
@@ -27,7 +31,7 @@ public class mainServer extends Thread {
      */
     public static void addOrRetreiveExistingSession(String uuid, String username) {
 
-        //TODO: make method secure for when LoginServer.java uses this method (Multithreading)
+        //TODO: make method secure for when minor.LoginServer.java uses this method (Multithreading)
         PlayerData playerData;
         synchronized (sessionsLock) {
 
@@ -52,17 +56,17 @@ public class mainServer extends Thread {
     }
 
 
-    mainServer(int port) throws IOException {
+    public MatchMakerServer(int port) throws IOException {
         this.serverPort = port;
         this.serverSocket = new ServerSocket(serverPort);
 
         // Set up how many threads will handle the requests
-        int numberOfRequestProcessors = 15;
+        int numberOfRequestProcessors = 20;
         System.out.println("Setting up " + numberOfRequestProcessors + " RequestProcessors");
 
         for(int i = 0; i < numberOfRequestProcessors; i++) {
             (new Thread(new RequestProcessor())).start();
-            System.out.println("RequestProcessor #" + i + " - started");
+            System.out.println("minor.matchmaker.RequestProcessor #" + i + " - started");
         }
 
         sessions = new HashMap<>();
@@ -112,11 +116,12 @@ class RequestProcessor implements Runnable {
     private static final Object lock = new Object();
 
     private static MatchMaker matchMaker = new MatchMaker();
+    private static GameSessionsServer gameSessionsServer = new GameSessionsServer();
 
     public static void processRequest(Socket request) {
 
         // Add all the requests to a pool. Then whenever
-        // a RequestProcessor Thread is available it will pop one from the pool.
+        // a minor.matchmaker.RequestProcessor Thread is available it will pop one from the pool.
         synchronized (pool) {
             pool.add(pool.size(), request);
             //System.out.println("          client[" + pool.size() + "] +1 added");
@@ -183,7 +188,7 @@ class RequestProcessor implements Runnable {
     }
 
     private PlayerData onPlayerConnected(String sessionId) {
-        PlayerData playerData = mainServer.sessions.get(sessionId);
+        PlayerData playerData = MatchMakerServer.sessions.get(sessionId);
 
         if(playerData == null) {
             //TODO: No session with this id found
@@ -251,7 +256,7 @@ class RequestProcessor implements Runnable {
 
         StringBuilder sb = new StringBuilder();
 
-        for(Map.Entry<String, PlayerData> entry : mainServer.sessions.entrySet()) {
+        for(Map.Entry<String, PlayerData> entry : MatchMakerServer.sessions.entrySet()) {
             PlayerData otherPlayerData = entry.getValue();
 
             if(Utility.isPlayerNearby(location, otherPlayerData.location)) {
@@ -272,27 +277,37 @@ class RequestProcessor implements Runnable {
         return sb.toString();
     }
 
-
     public void handleConnection_searchGame(String sessionId, PlayerData playerData, BufferedReader in, PrintWriter out, Socket socket) throws IOException {
 
+        GameLobbySession gameLobbySession = null;
+
         while(true) {
-            String request = in.readLine();
+
+            String request = null;
+
+            try {
+                request = in.readLine();
+            } catch (IOException e) {
+                System.err.println("searchGame connection lost");
+            }
 
             if(request == null) {
                 System.out.println("---------------- Player " + playerData.username + " Stopped searching");
                 onPlayerDisconnected(sessionId);
+
+                if(gameLobbySession != null)
+                    gameLobbySession.cancelGame();
                 break;
             }
 
             System.out.println("[" + playerData.username + "] Request: " + request);
 
-            // TODO: Process request
             switch (request) {
                 case "startSearch":
                     String gameType = in.readLine();
 
                     PlayerSession playerSession = new PlayerSession(sessionId, playerData, in, out, socket);
-                    GameLobbySession gameLobbySession = matchMaker.searchGame(playerSession, gameType); // TODO: Fix gameType
+                    gameLobbySession = matchMaker.searchGame(playerSession, gameType); // TODO: Fix gameType
 
                     if(gameLobbySession == null) { // if(No other nearby player found)
                         matchMaker.addPlayer(sessionId, playerSession);
@@ -315,19 +330,21 @@ class RequestProcessor implements Runnable {
                     String gameId = in.readLine();
                     String gameAcceptedS = in.readLine();
                     Boolean gameAccepted = Boolean.valueOf(gameAcceptedS);
-                    GameLobbySession gls = MatchMaker.gameLobbies.get(gameId);
+                    GameLobbySession gameLobby = MatchMaker.gameLobbies.get(gameId);
 
-                    if(gls != null) {
+                    if(gameLobby != null) {
 
                         if(gameAccepted) {
-                            gls.playerAccepted(playerData.username);
-                            if (gls.allPlayersAccepted()) {
-                                gls.sendStartGameCommand();
+                            gameLobby.playerAccepted(playerData.username);
+                            if (gameLobby.allPlayersAccepted()) {
+
+                                gameLobby.sendStartGameCommand();
                                 System.out.println("Game started.................");
+                                gameSessionsServer.addGameSession(gameLobby);
                             }
                         }
                         else {
-                            gls.cancelGame();
+                            gameLobby.cancelGame();
                         }
                     }
 

@@ -1,8 +1,11 @@
+package minor.matchmaker;
+
 import java.util.Date;
+import minor.Location;
 
 public class PlayerData {
     String databaseId;
-    String username;
+    public String username;
 
     Location location;
     Date updateDate;

@@ -1,65 +1,27 @@
-import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
+package minor.matchmaker;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-public class MatchMaker {
-
-    public static HashMap<String, PlayerSession> playersSearching;
-    public static Map<String, GameLobbySession> gameLobbies;
-
-    MatchMaker() {
-
-        playersSearching = new HashMap<>();
-        gameLobbies = new ConcurrentHashMap<>();
-    }
-
-    public synchronized GameLobbySession searchGame(PlayerSession playerSession, String gameType) {
-
-        GameLobbySession gameLobbySession = null;
-        PlayerSession queuedPlayer = null;
-
-        for (Map.Entry<String, PlayerSession> entry : playersSearching.entrySet()) {
-            PlayerSession otherPlayerSession = entry.getValue();
-
-            if(Utility.isPlayerNearby(playerSession.playerData.location,  otherPlayerSession.playerData.location)) {
-                queuedPlayer = otherPlayerSession;
-                break;
-            }
-        }
-
-        if(queuedPlayer != null) {
-            gameLobbySession = new GameLobbySession(queuedPlayer, playerSession);
-            gameLobbies.put(gameLobbySession.uniqueGameId, gameLobbySession);
-        }
-
-        return gameLobbySession;
-    }
-
-    public synchronized void addPlayer(String sessionId, PlayerSession playerSession) {
-        //TODO: Check if sessionId is already used
-        playersSearching.put(sessionId, playerSession);
-        System.out.println("Players searching: " + playersSearching.size());
-    }
-
-    public synchronized PlayerSession removePlayer(String sessionId) {
-        PlayerSession removed = playersSearching.remove(sessionId);
-        System.out.println("Players searching: " + playersSearching.size());
-        return removed;
-    }
-}
-
-class GameLobbySession {
+public class GameLobbySession {
 
     String uniqueGameId;
-    PlayerSession queuedPlayer, newestPlayer;
+    public PlayerSession queuedPlayer;
+    PlayerSession newestPlayer;
     int playersAccepted = 0;
     boolean cancellingGame = false;
     private boolean isCancelled = false;
+
+    public PlayerSession getPlayer1() {
+        return queuedPlayer;
+    }
+    public PlayerSession getPlayer2() {
+        return newestPlayer;
+    }
+    public String getGameId() {
+        return uniqueGameId;
+    }
 
     GameLobbySession(PlayerSession queuedPlayer, PlayerSession newestPlayer) {
         this.queuedPlayer = queuedPlayer;

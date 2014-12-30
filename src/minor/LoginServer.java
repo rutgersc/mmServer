@@ -1,3 +1,5 @@
+package minor;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
@@ -20,6 +22,8 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
+
+import minor.matchmaker.MatchMakerServer;
 
 public class LoginServer extends Thread {
 
@@ -127,7 +131,7 @@ public class LoginServer extends Thread {
         String GUEST_USERNAME = generateGuestUsername();
 
         UUID uuid = UUID.randomUUID();
-        mainServer.addOrRetreiveExistingSession(uuid.toString(), GUEST_USERNAME);
+        MatchMakerServer.addOrRetreiveExistingSession(uuid.toString(), GUEST_USERNAME);
 
         // Send data
         out.println(GUEST_USERNAME);
@@ -163,11 +167,11 @@ public class LoginServer extends Thread {
                 uuid = existingUuid;
                 System.out.println("User " + username + " logged in with existing UUID: " + uuid);
             }
-            if(uuid == null || !mainServer.isValidExistingUuid(existingUuid)) { // if no existing uuid was sent or the uuid was not valid.
+            if(uuid == null || !MatchMakerServer.isValidExistingUuid(existingUuid)) { // if no existing uuid was sent or the uuid was not valid.
                 uuid = UUID.randomUUID().toString(); // Generate a new id
             }
 
-            mainServer.addOrRetreiveExistingSession(uuid, username);
+            MatchMakerServer.addOrRetreiveExistingSession(uuid, username);
 
             System.out.println("User " + username + " logged in. sessionId = " + uuid);
 
