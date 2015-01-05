@@ -33,13 +33,14 @@ class GameSession extends Thread {
         this.gameId = gameId;
     }
 
-
     @Override
     public void run() {
         try {
+
             ClientHandler player1 = new ClientHandler(player1Socket);
             ClientHandler player2 = new ClientHandler(player2Socket);
 
+/*
             //init game
             player1.send("Method getName");
             player2.send("Method getName");
@@ -48,7 +49,7 @@ class GameSession extends Thread {
             parseCommand(s1);
             parseCommand(s2);
 
-
+*/
 
             // Gameloop
             do {
@@ -56,7 +57,8 @@ class GameSession extends Thread {
                     Thread.sleep(1000);
 
 
-                    //String s1 = player1.receive();
+                    String s1 = player1.receive();
+                    System.out.println(s1);
                     //parseCommand(s1);
                     //String speler2Reaksie = in_2.readLine();
 
