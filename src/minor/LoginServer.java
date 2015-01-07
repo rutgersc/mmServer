@@ -33,7 +33,9 @@ public class LoginServer extends Thread {
     protected int guestCounter = 1;
     Database database;
 
-    LoginServer(int serverPort) throws IOException {
+    LoginServer(int serverPort, Database database) throws IOException {
+
+        this.database = database;
 
         String truststore = "servertruststore.jks";
         String keystore = "server.jks";

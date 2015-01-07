@@ -20,6 +20,8 @@ public class Main {
     public static LoginServer loginServer;
     public static MatchMakerServer matchMakerServer;
 
+    static Database database;
+
     public static void main(String[] args) {
 
         boolean enableLoginServer = false;
@@ -38,6 +40,8 @@ public class Main {
             }
         }
 
+        String ____________DATABASE_IP____________ = "";
+        database = new Database("root", "test", ____________DATABASE_IP____________, "interval");
 
         //Set up login server
         if (enableLoginServer) {
@@ -60,10 +64,9 @@ public class Main {
 
     public static void startLoginServer() {
         try {
-            loginServer = new LoginServer(port_SSL_LOGIN);
+            loginServer = new LoginServer(port_SSL_LOGIN, database);
             loginServer.start();
             guiC.echo("Started login server");
-
 
         } catch (IOException e) {
             e.printStackTrace();
