@@ -39,7 +39,7 @@ public class MatchMakerServer extends Thread {
             playerData = sessions.get(uuid);
 
             if(playerData == null) {
-                playerData = new PlayerData("1", username, new Location(""), new Date());
+                playerData = new PlayerData();
             }
 
             sessions.put(uuid, playerData);
@@ -73,7 +73,7 @@ public class MatchMakerServer extends Thread {
 
         Location dummyLoc = new Location("dummy");
         dummyLoc.setLatitude(53.212032); dummyLoc.setLongitude(5.800100);
-        PlayerData dummy = new PlayerData("1","testuser3000", dummyLoc, new Date());
+        PlayerData dummy = new PlayerData("testuser3000", dummyLoc, new Date());
         sessions.put("ec1d2602-0397-48f7-9bd9-599b26ac80d5", dummy);
         generateDummyPlayers(dummyLoc);
     }
@@ -89,8 +89,8 @@ public class MatchMakerServer extends Thread {
 
         String uuid1 = "518923af-465f-4b2b-b31d-a0c57ce0518b";//UUID.randomUUID().toString();
         String uuid2 = "9d32d79a-de11-4e72-a61c-c9996f47a8b7";//UUID.randomUUID().toString();
-        sessions.put(uuid1, new PlayerData("1","testuser1000", dummyLoc, new Date()));
-        sessions.put(uuid2, new PlayerData("1","testuser2000", dummyLoc2, new Date()));
+        sessions.put(uuid1, new PlayerData("testuser1000", dummyLoc, new Date()));
+        sessions.put(uuid2, new PlayerData("testuser2000", dummyLoc2, new Date()));
     }
 
     public void run() {

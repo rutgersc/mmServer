@@ -13,6 +13,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.sql.SQLException;
 import java.util.UUID;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -24,11 +25,13 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
 
 import minor.matchmaker.MatchMakerServer;
+import minor.matchmaker.PlayerData;
 
 public class LoginServer extends Thread {
 
     private SSLServerSocket serverSocket;
     protected int guestCounter = 1;
+    Database database;
 
     LoginServer(int serverPort) throws IOException {
 
@@ -148,31 +151,43 @@ public class LoginServer extends Thread {
         // Validate the login
         //
         boolean isValidLogin = false;
+        String uuid = null;
 
-        //TODO: check username & password
+        try {
+            // Get user
+            PlayerData user = database.getUser(username);
 
-        if(username.equals("test") ||
-            username.equals("rutger")) { //TODO: Remove this test login
+            // Check password
+            if(database.checkPassword(password, user)) {
+                isValidLogin = true;
+            }
+
+            // Check for existing uuid
+            if(!existingUuid.equals("none")) {
+                uuid = existingUuid;
+                System.out.println("User " + username + " logged in with existing UUID: " + uuid);
+            }
+
+            // Generate new uuid?
+            if(uuid == null || !MatchMakerServer.isValidExistingUuid(existingUuid)) { // if no existing uuid was sent or the uuid was not valid.
+                uuid = UUID.randomUUID().toString(); // Generate a new id
+                database.setUUID(uuid, user);
+            }
+
+            MatchMakerServer.addOrRetreiveExistingSession(uuid, username);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        if(username.equals("test")) { //TODO: Remove this test login
             isValidLogin = true;
         }
 
         // Finish logging in
         //
         if(isValidLogin) {
-
-            String uuid = null;
-            if(!existingUuid.equals("none")) {
-                uuid = existingUuid;
-                System.out.println("User " + username + " logged in with existing UUID: " + uuid);
-            }
-            if(uuid == null || !MatchMakerServer.isValidExistingUuid(existingUuid)) { // if no existing uuid was sent or the uuid was not valid.
-                uuid = UUID.randomUUID().toString(); // Generate a new id
-            }
-
-            MatchMakerServer.addOrRetreiveExistingSession(uuid, username);
-
             System.out.println("User " + username + " logged in. sessionId = " + uuid);
-
             out.println(uuid);
         }
         else {

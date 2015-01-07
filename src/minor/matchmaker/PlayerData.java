@@ -1,17 +1,28 @@
 package minor.matchmaker;
 
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Date;
+import java.util.UUID;
+
 import minor.Location;
 
 public class PlayerData {
-    String databaseId;
+    public int databaseId;
     public String username;
+    public Timestamp lastLoginTimestamp;
+    public int totalGamesPlayed;
+    public int totalWins;
+    public String hashedPassword;
+    public String sessionUUID;
 
     Location location;
     Date updateDate;
 
-    public PlayerData(String databaseId, String username, Location currentLocation, Date updateDate) {
-        this.databaseId = databaseId;
+    public PlayerData() {
+        this("", new Location(""), new Date());
+    }
+    public PlayerData(String username, Location currentLocation, Date updateDate) {
         this.username = username;
         this.location = currentLocation;
         this.updateDate = updateDate;
