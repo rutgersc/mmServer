@@ -156,8 +156,6 @@ public class LoginServer extends Thread {
             isValidLogin = true;
         }
 
-        System.out.println("u: " + username + " - p: " + password);
-
         // Finish logging in
         //
         if(isValidLogin) {
