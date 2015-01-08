@@ -1,7 +1,6 @@
 package minor;
 
 import java.io.IOException;
-import java.sql.SQLException;
 
 import minor.game.GameSessionsServer;
 import minor.matchmaker.MatchMakerServer;
@@ -23,7 +22,7 @@ public class Main {
 
     static Database database;
 
-    public static void main(String[] args) throws SQLException {
+    public static void main(String[] args) {
 
         boolean enableLoginServer = false;
         boolean enableMatchmakingServer = false;
@@ -41,7 +40,7 @@ public class Main {
             }
         }
 
-        String ____________DATABASE_IP____________ = "192.168.56.101";
+        String ____________DATABASE_IP____________ = "";
         database = new Database("root", "test", ____________DATABASE_IP____________, "interval");
 
         //Set up login server

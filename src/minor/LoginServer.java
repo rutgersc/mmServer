@@ -136,13 +136,7 @@ public class LoginServer extends Thread {
         String GUEST_USERNAME = generateGuestUsername();
 
         UUID uuid = UUID.randomUUID();
-
-        PlayerData playerData = new PlayerData();
-        playerData.sessionUUID = uuid.toString();
-        playerData.username = GUEST_USERNAME;
-        playerData.isGuest = true;
-
-        MatchMakerServer.addUuidSession(uuid.toString(), playerData);
+        MatchMakerServer.addOrRetreiveExistingSession(uuid.toString(), GUEST_USERNAME);
 
         // Send data
         out.println(GUEST_USERNAME);
@@ -182,8 +176,7 @@ public class LoginServer extends Thread {
                 database.setUUID(uuid, user);
             }
 
-            user.sessionUUID = uuid;
-            MatchMakerServer.addUuidSession(uuid, user);
+            MatchMakerServer.addOrRetreiveExistingSession(uuid, username);
 
         } catch (SQLException e) {
             e.printStackTrace();

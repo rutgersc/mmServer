@@ -3,6 +3,8 @@ package minor;
 import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import minor.matchmaker.PlayerData;
+import org.springframework.data.jdbc.query.QueryDslJdbcTemplate;
+
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -15,9 +17,8 @@ public class Database {
 
     public static void main(String [ ] args)
     {
+       Database db = new Database("root", "test", "192.168.1.108", "interval");
         try {
-            Database db = new Database("root", "test", "192.168.1.108", "interval");
-
             PlayerData user = db.getUser("rutger");
 
             String newUUID = UUID.randomUUID().toString();
@@ -42,7 +43,7 @@ public class Database {
 
     MysqlDataSource dataSource;
 
-    public Database(String user, String password, String serverName, String databaseName) throws SQLException {
+    public Database(String user, String password, String serverName, String databaseName) {
         this.user = user;
         this.password = password;
         this.serverName = serverName;
@@ -56,13 +57,15 @@ public class Database {
         dataSource.setPassword(password);
 
         Connection connection;
-
-        connection = dataSource.getConnection();
-        DatabaseMetaData mData = connection.getMetaData();
-        System.out.println("Server name: "  + mData.getDatabaseProductName());
-        System.out.println("Server version: "  + mData.getDatabaseProductVersion());
-        connection.close();
-
+        try {
+            connection = dataSource.getConnection();
+            DatabaseMetaData mData = connection.getMetaData();
+            System.out.println("Server name: "  + mData.getDatabaseProductName());
+            System.out.println("Server version: "  + mData.getDatabaseProductVersion());
+            connection.close();
+        } catch (SQLException e1) {
+            e1.printStackTrace();
+        }
     }
 
     public PlayerData getUser(String name) throws SQLException {
@@ -110,9 +113,6 @@ public class Database {
     public void setUUID(String uuid, PlayerData playerData) throws SQLException {
 
         if(playerData.sessionUUID.equals(uuid))
-            return;
-
-        if(playerData.databaseId == 0)
             return;
 
         String sql =

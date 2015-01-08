@@ -15,7 +15,6 @@ public class PlayerData {
     public int totalWins;
     public String hashedPassword;
     public String sessionUUID;
-    public boolean isGuest;
 
     Location location;
     Date updateDate;
