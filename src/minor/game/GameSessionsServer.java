@@ -41,7 +41,7 @@ public class GameSessionsServer extends Thread {
 
         System.out.println("GameId: " + lobbySession.getGameId());
         System.out.println("user 1: " + player1.playerData.username);
-        System.out.println("user 2: " + player1.playerData.username);
+        System.out.println("user 2: " + player2.playerData.username);
 
 
         //TODO <----------------------- gamesessie wordt hier aangemaakt
@@ -53,7 +53,7 @@ public class GameSessionsServer extends Thread {
         Socket player2Socket = player2.socket;
         String gameId = lobbySession.getGameId();
 
-        GameSession newGameSession = new GameSession(player1.socket, player2.socket, gameId);
+        GameSession newGameSession = new GameSession(player1.socket, player2.socket, gameId, player1.playerData.username , player2.playerData.username);
         // newGameSession.run(); // Runnen?
         //TODO: toevoegen aan sessie lijst i think
 

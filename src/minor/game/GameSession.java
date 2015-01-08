@@ -14,23 +14,22 @@ class GameSession extends Thread {
 
     private String gameId;
     private boolean activeSession = true;
-    private String playerturn = "";
+    private String playerTurn = "";
 
     String player1Name;
     Socket player1Socket;
-    BufferedReader in_1;
-    PrintWriter out_1;
 
     String player2Name;
     Socket player2Socket;
-    BufferedReader in_2;
-    PrintWriter out_2;
 
 
-    GameSession(Socket player1Socket, Socket player2Socket, String gameId) {
+    GameSession(Socket player1Socket, Socket player2Socket, String gameId, String p1Name, String p2Name) {
         this.player1Socket = player1Socket;
         this.player2Socket = player2Socket;
         this.gameId = gameId;
+        this.player1Name = p1Name;
+        this.player2Name = p2Name;
+        playerTurn = player1Name;
     }
 
     @Override
@@ -56,9 +55,10 @@ class GameSession extends Thread {
                 try {
                     Thread.sleep(1000);
 
-
-                    String s1 = player1.receive();
-                    System.out.println(s1);
+                    player1.send("TESTTTT");
+                    player2.send("TESTTT");
+                    //String s1 = player1.receive();
+                    //System.out.println(s1);
                     //parseCommand(s1);
                     //String speler2Reaksie = in_2.readLine();
 
@@ -84,10 +84,11 @@ class GameSession extends Thread {
             if(sA[0].equals("Method"))
             {
                 System.out.println("GameSession: Method Called");
-                if(sA[1].equals("setName"))
+                if(sA[1].equals("checkTurn"))
                 {
-                    System.out.println("GameSession: setName Called");
-                    setPlayerName(sA[2]);
+                    System.out.println("GameSession: checkTurn Called");
+                    String output = checkTurn();
+
                 }
             }
             else if (sA[0].equals("Print"))
@@ -97,22 +98,12 @@ class GameSession extends Thread {
         }
     }
 
-    private void setPlayerName(String s)
+    private void getPlayer() {
+
+    }
+
+    private String checkTurn()
     {
-        if(player1Name == null)
-        {
-            player1Name = s;
-            Echo("GameSession: Set Player1Name to " + s);
-            GameSessionsServer.addUser(s);
-        }
-        else if(player2Name == null)
-        {
-            player2Name = s;
-            Echo("GameSession: Set Player2Name to " + s);
-            GameSessionsServer.addUser(s);
-        }
-        else{
-            Echo("Setname ERROR");
-        }
+        return playerTurn;
     }
 }

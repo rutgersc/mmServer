@@ -295,8 +295,9 @@ class RequestProcessor implements Runnable {
                 System.out.println("---------------- Player " + playerData.username + " Stopped searching");
                 onPlayerDisconnected(sessionId);
 
-                if(gameLobbySession != null)
-                    gameLobbySession.cancelGame();
+                //TODO re-enable
+//                if(gameLobbySession != null)
+//                    gameLobbySession.cancelGame();
                 break;
             }
 
@@ -341,10 +342,11 @@ class RequestProcessor implements Runnable {
                                 gameLobby.sendStartGameCommand();
                                 System.out.println("Game started.................");
                                 gameSessionsServer.addGameSession(gameLobby);
+                                return;
                             }
                         }
                         else {
-                            gameLobby.cancelGame();
+                            //gameLobby.cancelGame();
                         }
                     }
 
