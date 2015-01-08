@@ -8,7 +8,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import minor.Location;
+import minor.Main;
 import minor.Utility;
 import minor.game.GameSessionsServer;
 
@@ -27,25 +29,22 @@ public class MatchMakerServer extends Thread {
      * Add session
      *
      * @param uuid
-     * @param username
+     * @param playerData
      */
-    public static void addOrRetreiveExistingSession(String uuid, String username) {
+    public static void addUuidSession(String uuid, PlayerData playerData) {
 
-        //TODO: make method secure for when minor.LoginServer.java uses this method (Multithreading)
-        PlayerData playerData;
+        // TODO: make method secure for when minor.LoginServer.java uses this method (Multithreading)
         synchronized (sessionsLock) {
 
-            //TODO: Check if uuid is expired (?)
-            playerData = sessions.get(uuid);
-
-            if(playerData == null) {
-                playerData = new PlayerData();
+            // TODO: Check if uuid is expired (?)
+            if(sessions.get(uuid) != null) {
+                System.out.println("Session already exists with uuid");
             }
 
             sessions.put(uuid, playerData);
         }
 
-        System.out.println("Added new session: " + uuid + " username: " + username);
+        System.out.println("Added new session: " + uuid + " username: " + playerData.username);
     }
 
     public static boolean isValidExistingUuid(String uuid) {
@@ -54,7 +53,6 @@ public class MatchMakerServer extends Thread {
             return sessions.containsKey(uuid);
         }
     }
-
 
     public MatchMakerServer(int port) throws IOException {
         this.serverPort = port;
@@ -75,7 +73,7 @@ public class MatchMakerServer extends Thread {
         dummyLoc.setLatitude(53.212032); dummyLoc.setLongitude(5.800100);
         PlayerData dummy = new PlayerData("testuser3000", dummyLoc, new Date());
         sessions.put("ec1d2602-0397-48f7-9bd9-599b26ac80d5", dummy);
-        generateDummyPlayers(dummyLoc);
+        //generateDummyPlayers(dummyLoc);
     }
 
     public void generateDummyPlayers(Location startLocation) {
@@ -341,6 +339,8 @@ class RequestProcessor implements Runnable {
                                 gameLobby.sendStartGameCommand();
                                 System.out.println("Game started.................");
                                 gameSessionsServer.addGameSession(gameLobby);
+                                Main.guiC.echo("Mathmaking started a game, id= " + gameId);
+                                return;
                             }
                         }
                         else {
@@ -351,6 +351,8 @@ class RequestProcessor implements Runnable {
                     break;
             }
         }
+
+        System.out.println("Matchmaking matched 2 players");
     }
 }
 
