@@ -43,6 +43,10 @@ public class GameSessionsServer extends Thread {
         System.out.println("user 1: " + player1.playerData.username);
         System.out.println("user 2: " + player1.playerData.username);
 
+        Main.guiC.echo("GameId: " + lobbySession.getGameId());
+        Main.guiC.echo("user 1: " + player1.playerData.username);
+        Main.guiC.echo("user 2: " + player1.playerData.username);
+
 
         //TODO <----------------------- gamesessie wordt hier aangemaakt
         //TODO <-----------------------

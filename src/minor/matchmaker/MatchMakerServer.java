@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import minor.Location;
+import minor.Main;
 import minor.Utility;
 import minor.game.GameSessionsServer;
 
@@ -165,6 +166,7 @@ class RequestProcessor implements Runnable {
                 if (playerData != null) {
 
                     System.out.println("+++++++ Player " + playerData.username + " Connected: " + connectionType);
+                    Main.guiC.echo("+++++++ Player " + playerData.username + " Connected: " + connectionType);
 
                     switch (connectionType) {
 
@@ -209,6 +211,7 @@ class RequestProcessor implements Runnable {
 
             if(request == null) {
                 System.out.println("------- Player " + playerData.username + " Disconnected");
+                Main.guiC.echo("------- Player " + playerData.username + " Disconnected");
                 onPlayerDisconnected(sessionId);
                 break;
             }
@@ -250,6 +253,7 @@ class RequestProcessor implements Runnable {
         out.flush();
 
         System.out.println("[" + playerData.username + "] Sent nearby players");
+        Main.guiC.echo("[" + playerData.username + "] Sent nearby players");
     }
 
     private String getNearbyPlayersString(Location location) {
@@ -293,6 +297,7 @@ class RequestProcessor implements Runnable {
 
             if(request == null) {
                 System.out.println("---------------- Player " + playerData.username + " Stopped searching");
+                Main.guiC.echo("---------------- Player " + playerData.username + " Stopped searching");
                 onPlayerDisconnected(sessionId);
 
                 if(gameLobbySession != null)
@@ -312,6 +317,7 @@ class RequestProcessor implements Runnable {
                     if(gameLobbySession == null) { // if(No other nearby player found)
                         matchMaker.addPlayer(sessionId, playerSession);
                         System.out.println("[" + playerData.username + "] Started searching for a game");
+                        Main.guiC.echo("[" + playerData.username + "] Started searching for a game");
 
                         out.println("waitingForPlayer");
                         out.flush();
@@ -319,6 +325,7 @@ class RequestProcessor implements Runnable {
                     else { // Found nearby player!
 
                         System.out.println("[" + playerData.username + "] Found a game");
+                        Main.guiC.echo("[" + playerData.username + "] Found a game");
 
                         matchMaker.removePlayer(gameLobbySession.queuedPlayer.sessionId);
 
@@ -340,6 +347,7 @@ class RequestProcessor implements Runnable {
 
                                 gameLobby.sendStartGameCommand();
                                 System.out.println("Game started.................");
+                                Main.guiC.echo("Game started.................");
                                 gameSessionsServer.addGameSession(gameLobby);
                             }
                         }

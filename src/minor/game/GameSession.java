@@ -13,19 +13,15 @@ import static minor.game.GameSessionsServer.Echo;
 class GameSession extends Thread {
 
     private String gameId;
-    private boolean activeSession = true;
-    private String playerturn = "";
 
     String player1Name;
     Socket player1Socket;
-    BufferedReader in_1;
-    PrintWriter out_1;
 
     String player2Name;
     Socket player2Socket;
-    BufferedReader in_2;
-    PrintWriter out_2;
 
+    private String playerturn = "";
+    private boolean activeSession = true;
 
     GameSession(Socket player1Socket, Socket player2Socket, String gameId) {
         this.player1Socket = player1Socket;
