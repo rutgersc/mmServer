@@ -16,7 +16,7 @@ import minor.game.GameSessionsServer;
 /**
  * Created by hoi on 10/24/14.
  */
-public class MatchMakerServer extends Thread {
+public class MainServer extends Thread {
 
     private int serverPort;
     private ServerSocket serverSocket;
@@ -26,27 +26,27 @@ public class MatchMakerServer extends Thread {
 
     /**
      * Add session
-     *
-     * @param uuid
-     * @param username
      */
-    public static void addOrRetreiveExistingSession(String uuid, String username) {
+    public static void addSession(String uuid, PlayerData user) {
 
         //TODO: make method secure for when minor.LoginServer.java uses this method (Multithreading)
-        PlayerData playerData;
         synchronized (sessionsLock) {
 
             //TODO: Check if uuid is expired (?)
-            playerData = sessions.get(uuid);
+            PlayerData existingSessionUser = sessions.get(uuid);
 
-            if(playerData == null) {
-                playerData = new PlayerData();
+            if(user == null) {
+                if(existingSessionUser != null) {
+                    user = existingSessionUser;
+                }
             }
 
-            sessions.put(uuid, playerData);
+            sessions.put(uuid, user);
         }
 
-        System.out.println("Added new session: " + uuid + " username: " + username);
+        if(user != null && user.username != null) {
+            System.out.println("Added new session: " + uuid + " username: " + user.username);
+        }
     }
 
     public static boolean isValidExistingUuid(String uuid) {
@@ -57,7 +57,7 @@ public class MatchMakerServer extends Thread {
     }
 
 
-    public MatchMakerServer(int port) throws IOException {
+    public MainServer(int port) throws IOException {
         this.serverPort = port;
         this.serverSocket = new ServerSocket(serverPort);
 
@@ -71,15 +71,14 @@ public class MatchMakerServer extends Thread {
         }
 
         sessions = new HashMap<>();
-
-        Location dummyLoc = new Location("dummy");
-        dummyLoc.setLatitude(53.212032); dummyLoc.setLongitude(5.800100);
-        PlayerData dummy = new PlayerData("testuser3000", dummyLoc, new Date());
-        sessions.put("ec1d2602-0397-48f7-9bd9-599b26ac80d5", dummy);
-        generateDummyPlayers(dummyLoc);
     }
 
-    public void generateDummyPlayers(Location startLocation) {
+    public void generateDummyPlayers() {
+
+        Location startLocation = new Location("dummy");
+        startLocation.setLatitude(53.212032); startLocation.setLongitude(5.800100);
+        PlayerData dummy = new PlayerData("testuser3000", startLocation, new Date());
+        sessions.put("ec1d2602-0397-48f7-9bd9-599b26ac80d5", dummy);
         /**
          * TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA-TEST-DATA
          */
@@ -190,7 +189,7 @@ class RequestProcessor implements Runnable {
     }
 
     private PlayerData onPlayerConnected(String sessionId) {
-        PlayerData playerData = MatchMakerServer.sessions.get(sessionId);
+        PlayerData playerData = MainServer.sessions.get(sessionId);
 
         if(playerData == null) {
             //TODO: No session with this id found
@@ -204,14 +203,19 @@ class RequestProcessor implements Runnable {
         matchMaker.removePlayer(sessionId);
     }
 
+
+    // *****************************************************************
+    //  Lobby Connection
+    // *****************************************************************
+
     public void handleConnection_lobbySession(String sessionId, PlayerData playerData, BufferedReader in, PrintWriter out) throws IOException {
 
         while(true) {
             String request = in.readLine();
 
             if(request == null) {
-                System.out.println("------- Player " + playerData.username + " Disconnected");
-                Main.guiC.echo("------- Player " + playerData.username + " Disconnected");
+                System.out.println("------- Player " + playerData.username + " Disconnected from LOBBY");
+                Main.guiC.echo("------- Player " + playerData.username + " Disconnected  from LOBBY");
                 onPlayerDisconnected(sessionId);
                 break;
             }
@@ -260,7 +264,7 @@ class RequestProcessor implements Runnable {
 
         StringBuilder sb = new StringBuilder();
 
-        for(Map.Entry<String, PlayerData> entry : MatchMakerServer.sessions.entrySet()) {
+        for(Map.Entry<String, PlayerData> entry : MainServer.sessions.entrySet()) {
             PlayerData otherPlayerData = entry.getValue();
 
             if(Utility.isPlayerNearby(location, otherPlayerData.location)) {
@@ -345,10 +349,10 @@ class RequestProcessor implements Runnable {
                             gameLobby.playerAccepted(playerData.username);
                             if (gameLobby.allPlayersAccepted()) {
 
-                                gameLobby.sendStartGameCommand();
                                 System.out.println("Game started.................");
                                 Main.guiC.echo("Game started.................");
                                 gameSessionsServer.addGameSession(gameLobby);
+                                return;
                             }
                         }
                         else {

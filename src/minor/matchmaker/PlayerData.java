@@ -15,8 +15,9 @@ public class PlayerData {
     public int totalWins;
     public String hashedPassword;
     public String sessionUUID;
+    public boolean isGuest;
 
-    Location location;
+    public Location location;
     Date updateDate;
 
     public PlayerData() {
@@ -26,5 +27,12 @@ public class PlayerData {
         this.username = username;
         this.location = currentLocation;
         this.updateDate = updateDate;
+    }
+
+    public static PlayerData MakeGuest(String username) {
+        PlayerData playerData = new PlayerData();
+        playerData.isGuest = true;
+        playerData.username = username;
+        return playerData;
     }
 }

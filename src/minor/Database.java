@@ -3,37 +3,10 @@ package minor;
 import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import minor.matchmaker.PlayerData;
-import org.springframework.data.jdbc.query.QueryDslJdbcTemplate;
-
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.swing.tree.RowMapper;
 import java.sql.*;
-import java.util.Properties;
 import java.util.UUID;
 
-public class Database {
-
-    public static void main(String [ ] args)
-    {
-       Database db = new Database("root", "test", "192.168.1.108", "interval");
-        try {
-            PlayerData user = db.getUser("rutger");
-
-            String newUUID = UUID.randomUUID().toString();
-            System.out.println("Hallo " + newUUID);
-            db.setUUID(newUUID, user);
-
-            //boolean isValid = db.checkPassword("test", user);
-            //boolean isValid2 = db.checkPassword("test2", user);
-
-            System.out.println( "..." );
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+public class Database implements IntervalDatabase {
 
     String user;
     String password;
@@ -66,6 +39,11 @@ public class Database {
         } catch (SQLException e1) {
             e1.printStackTrace();
         }
+    }
+
+    @Override
+    public MysqlDataSource getDataSource() {
+        return dataSource;
     }
 
     public PlayerData getUser(String name) throws SQLException {
@@ -112,6 +90,9 @@ public class Database {
 
     public void setUUID(String uuid, PlayerData playerData) throws SQLException {
 
+        if(playerData.isGuest)
+            return;
+
         if(playerData.sessionUUID.equals(uuid))
             return;
 
@@ -123,8 +104,27 @@ public class Database {
         try (Connection c = dataSource.getConnection()) {
             try (PreparedStatement stmt = c.prepareStatement(sql);  ) {
                 int rs = stmt.executeUpdate();
-                System.out.println(rs);
             }
+        }
+    }
+
+    public static void main(String [ ] args)
+    {
+        Database db = new Database("root", "test", "192.168.1.108", "interval");
+        try {
+            PlayerData user = db.getUser("rutger");
+
+            String newUUID = UUID.randomUUID().toString();
+            System.out.println("Hallo " + newUUID);
+            db.setUUID(newUUID, user);
+
+            //boolean isValid = db.checkPassword("test", user);
+            //boolean isValid2 = db.checkPassword("test2", user);
+
+            System.out.println( "..." );
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }

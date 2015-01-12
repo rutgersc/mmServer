@@ -3,7 +3,7 @@ package minor;
 import java.io.IOException;
 
 import minor.game.GameSessionsServer;
-import minor.matchmaker.MatchMakerServer;
+import minor.matchmaker.MainServer;
 import minor.gui.*;
 
 /**
@@ -18,9 +18,9 @@ public class Main {
     public static Integer port_MATCHMAKING;
 
     public static LoginServer loginServer;
-    public static MatchMakerServer matchMakerServer;
+    public static MainServer mainServer;
 
-    static Database database;
+    static IntervalDatabase database;
 
     public static void main(String[] args) {
 
@@ -40,8 +40,8 @@ public class Main {
             }
         }
 
-        String ____________DATABASE_IP____________ = "";
-        database = new Database("root", "test", ____________DATABASE_IP____________, "interval");
+        //database = new Database("root", "test", ____________DATABASE_IP____________, "interval");
+        database = new OfflineDatabase();
 
         //Set up login server
         if (enableLoginServer) {
@@ -75,8 +75,8 @@ public class Main {
 
     public static void startMatchmakingServer()  {
         try {
-            matchMakerServer = new MatchMakerServer(port_MATCHMAKING);
-            matchMakerServer.start();
+            mainServer = new MainServer(port_MATCHMAKING);
+            mainServer.start();
             guiC.echo("Started matchmaking server");
 
         } catch (IOException e) {

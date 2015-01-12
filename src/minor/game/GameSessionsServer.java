@@ -36,6 +36,8 @@ public class GameSessionsServer extends Thread {
 
     public synchronized void addGameSession(GameLobbySession lobbySession) {
 
+        lobbySession.sendStartGameCommand();
+
         PlayerSession player1 = lobbySession.getPlayer1();
         PlayerSession player2 = lobbySession.getPlayer2();
 
@@ -44,8 +46,8 @@ public class GameSessionsServer extends Thread {
         System.out.println("user 2: " + player1.playerData.username);
 
         Main.guiC.echo("GameId: " + lobbySession.getGameId());
-        Main.guiC.echo("user 1: " + player1.playerData.username);
-        Main.guiC.echo("user 2: " + player1.playerData.username);
+        Main.guiC.echo("user 1: " + player2.playerData.username);
+        Main.guiC.echo("user 2: " + player2.playerData.username);
 
 
         //TODO <----------------------- gamesessie wordt hier aangemaakt

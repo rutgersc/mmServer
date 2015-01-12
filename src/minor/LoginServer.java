@@ -24,16 +24,16 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
 
-import minor.matchmaker.MatchMakerServer;
+import minor.matchmaker.MainServer;
 import minor.matchmaker.PlayerData;
 
 public class LoginServer extends Thread {
 
     private SSLServerSocket serverSocket;
     protected int guestCounter = 1;
-    Database database;
+    IntervalDatabase database;
 
-    LoginServer(int serverPort, Database database) throws IOException {
+    LoginServer(int serverPort, IntervalDatabase database) throws IOException {
 
         this.database = database;
 
@@ -128,18 +128,18 @@ public class LoginServer extends Thread {
 
     private String generateGuestUsername() {
         guestCounter++;
-        return "Guest" + guestCounter;
+        return "MakeGuest" + guestCounter;
     }
 
     private void handleGuestLogin(BufferedReader in, PrintWriter out) throws IOException {
 
-        String GUEST_USERNAME = generateGuestUsername();
-
         UUID uuid = UUID.randomUUID();
-        MatchMakerServer.addOrRetreiveExistingSession(uuid.toString(), GUEST_USERNAME);
+        PlayerData newGuest = PlayerData.MakeGuest(generateGuestUsername());
+
+        MainServer.addSession(uuid.toString(), newGuest);
 
         // Send data
-        out.println(GUEST_USERNAME);
+        out.println(newGuest.username);
         out.println(uuid);
 
         out.flush();
@@ -171,12 +171,14 @@ public class LoginServer extends Thread {
             }
 
             // Generate new uuid?
-            if(uuid == null || !MatchMakerServer.isValidExistingUuid(existingUuid)) { // if no existing uuid was sent or the uuid was not valid.
+            if(uuid == null || !MainServer.isValidExistingUuid(existingUuid)) { // if no existing uuid was sent or the uuid was not valid.
                 uuid = UUID.randomUUID().toString(); // Generate a new id
-                database.setUUID(uuid, user);
+                user.sessionUUID = uuid; // Set new UUID
+                database.setUUID(uuid, user); // Also in the database
             }
 
-            MatchMakerServer.addOrRetreiveExistingSession(uuid, username);
+            // Add the player session to main server
+            MainServer.addSession(uuid, user);
 
         } catch (SQLException e) {
             e.printStackTrace();
