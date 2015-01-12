@@ -43,10 +43,10 @@ public class GameSessionsServer extends Thread {
 
         System.out.println("GameId: " + lobbySession.getGameId());
         System.out.println("user 1: " + player1.playerData.username);
-        System.out.println("user 2: " + player1.playerData.username);
+        System.out.println("user 2: " + player2.playerData.username);
 
         Main.guiC.echo("GameId: " + lobbySession.getGameId());
-        Main.guiC.echo("user 1: " + player2.playerData.username);
+        Main.guiC.echo("user 1: " + player1.playerData.username);
         Main.guiC.echo("user 2: " + player2.playerData.username);
 
 
@@ -55,13 +55,28 @@ public class GameSessionsServer extends Thread {
         //TODO <-----------------------
         //TODO <-----------------------
 
-        Socket player1Socket = player1.socket;
-        Socket player2Socket = player2.socket;
         String gameId = lobbySession.getGameId();
 
-        GameSession newGameSession = new GameSession(player1.socket, player2.socket, gameId);
-        // newGameSession.run(); // Runnen?
-        //TODO: toevoegen aan sessie lijst i think
+
+        try {
+            System.out.println("Sending bitches1");
+            player1.out.println("test");
+            player1.out.flush();
+            String response = player1.in.readLine();
+            System.out.println("Test1: " + response);
+
+            System.out.println("Sending bitches2");
+            player2.out.println("test");
+            player2.out.flush();
+            String response2 = player2.in.readLine();
+            System.out.println("Test2: " + response2);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+//        GameSession newGameSession = new GameSession(player1, player2, gameId);
+//         newGameSession.start(); // Runnen?
 
         //TODO <-----------------------
         //TODO <-----------------------

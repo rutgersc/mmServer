@@ -5,6 +5,8 @@
  */
 package minor.game;
 
+import minor.matchmaker.PlayerSession;
+
 import java.io.*;
 import java.net.Socket;
 import static minor.game.GameSessionsServer.Echo;
@@ -14,24 +16,31 @@ class GameSession extends Thread {
 
     private String gameId;
 
+    PlayerSession player1;
     String player1Name;
     Socket player1Socket;
 
+    PlayerSession player2;
     String player2Name;
     Socket player2Socket;
 
     private String playerturn = "";
     private boolean activeSession = true;
 
-    GameSession(Socket player1Socket, Socket player2Socket, String gameId) {
-        this.player1Socket = player1Socket;
-        this.player2Socket = player2Socket;
+    GameSession(PlayerSession player1, PlayerSession player2, String gameId) {
+        this.player1 = player1;
+        this.player2 = player2;
         this.gameId = gameId;
     }
 
     @Override
     public void run() {
         try {
+
+           String swag1 =  player1.in.readLine();
+            String swag2 =  player2.in.readLine();
+
+            System.out.println("Swagmenow?" + swag1 + swag2);
 
             ClientHandler player1 = new ClientHandler(player1Socket);
             ClientHandler player2 = new ClientHandler(player2Socket);
@@ -45,7 +54,7 @@ class GameSession extends Thread {
             parseCommand(s1);
             parseCommand(s2);
 
-*/
+
 
             // Gameloop
             do {
@@ -64,7 +73,7 @@ class GameSession extends Thread {
                 } catch (Exception e) {
                 }
             } while (activeSession);
-
+*/
 
         } catch (Exception e) {
             e.printStackTrace();

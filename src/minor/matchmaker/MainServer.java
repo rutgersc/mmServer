@@ -288,8 +288,13 @@ class RequestProcessor implements Runnable {
     public void handleConnection_searchGame(String sessionId, PlayerData playerData, BufferedReader in, PrintWriter out, Socket socket) throws IOException {
 
         GameLobbySession gameLobbySession = null;
+        boolean isGameStarted = false;
 
         while(true) {
+
+            if(isGameStarted) {
+                return;
+            }
 
             String request = null;
 
@@ -309,7 +314,7 @@ class RequestProcessor implements Runnable {
                 break;
             }
 
-            System.out.println("[" + playerData.username + "] Request: " + request);
+            System.out.println("[" + playerData.username + "] SearchGame Request: " + request);
 
             switch (request) {
                 case "startSearch":
@@ -343,6 +348,7 @@ class RequestProcessor implements Runnable {
                     Boolean gameAccepted = Boolean.valueOf(gameAcceptedS);
                     GameLobbySession gameLobby = MatchMaker.gameLobbies.get(gameId);
 
+                    isGameStarted = gameAccepted;
                     if(gameLobby != null) {
 
                         if(gameAccepted) {
@@ -352,7 +358,6 @@ class RequestProcessor implements Runnable {
                                 System.out.println("Game started.................");
                                 Main.guiC.echo("Game started.................");
                                 gameSessionsServer.addGameSession(gameLobby);
-                                return;
                             }
                         }
                         else {
