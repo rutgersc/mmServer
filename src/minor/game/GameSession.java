@@ -14,6 +14,7 @@ import static minor.game.GameSessionsServer.Echo;
 
 class GameSession extends Thread {
 
+    private TicTacToe game;
     private String gameId;
 
     PlayerSession player1;
@@ -24,35 +25,35 @@ class GameSession extends Thread {
     String player2Name;
     Socket player2Socket;
 
-    private String playerturn = "";
+    private char[][] board;
+    boolean player1Set = false;
+    boolean player2Set = false;
+    private int playerTurn = 1;
     private boolean activeSession = true;
+    private int ID = 0;
 
     GameSession(PlayerSession player1, PlayerSession player2, String gameId) {
         this.player1 = player1;
         this.player2 = player2;
         this.gameId = gameId;
+        game = new TicTacToe();
+        game.initializeBoard();
+        this.board = game.getBoard();
     }
 
     @Override
     public void run() {
         try {
 
-           String swag1 =  player1.in.readLine();
-            String swag2 =  player2.in.readLine();
+            String s1;
+            String s2;
 
-            System.out.println("Swagmenow?" + swag1 + swag2);
-
-            ClientHandler player1 = new ClientHandler(player1Socket);
-            ClientHandler player2 = new ClientHandler(player2Socket);
-
-/*
-            //init game
-            player1.send("Method getName");
-            player2.send("Method getName");
-            String s1 = player1.receive();
-            String s2 = player2.receive();
-            parseCommand(s1);
-            parseCommand(s2);
+            s1 = player1.in.readLine();
+            parseCommand(1, s1);
+            s2 = player2.in.readLine();
+            parseCommand(2, s2);
+            //sendBoard(1);
+            //sendBoard(2);
 
 
 
@@ -62,8 +63,27 @@ class GameSession extends Thread {
                     Thread.sleep(1000);
 
 
-                    String s1 = player1.receive();
-                    System.out.println(s1);
+                    s1 = player1.in.readLine();
+                    parseCommand(1, s1);
+                    s1 = "ERROR";
+                    System.out.println("p1 checked");
+                    s1 = player1.in.readLine();
+                    parseCommand(1, s1);
+                    s1 = "ERROR";
+                    System.out.println("p1 checked");
+                    s1 = player1.in.readLine();
+                    parseCommand(1, s1);
+
+                    s2 = player2.in.readLine();
+                    parseCommand(2, s2);
+                    s2 = "Print ERROR";
+                    System.out.println("p2 checked");
+                    s2 = player2.in.readLine();
+                    parseCommand(2, s2);
+                    s2 = "Print ERROR";
+                    System.out.println("p2 checked");
+                    s2 = player2.in.readLine();
+                    parseCommand(2, s2);
                     //parseCommand(s1);
                     //String speler2Reaksie = in_2.readLine();
 
@@ -73,7 +93,7 @@ class GameSession extends Thread {
                 } catch (Exception e) {
                 }
             } while (activeSession);
-*/
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -81,7 +101,7 @@ class GameSession extends Thread {
 
     }
 
-    private void parseCommand(String s)
+    private void parseCommand(int player, String s)
     {
         String[] sA = s.split("\\s+");
         if(sA.length >= 1)
@@ -89,35 +109,111 @@ class GameSession extends Thread {
             if(sA[0].equals("Method"))
             {
                 System.out.println("GameSession: Method Called");
-                if(sA[1].equals("setName"))
+                if(sA[1].equals("getBoard"))
                 {
-                    System.out.println("GameSession: setName Called");
-                    setPlayerName(sA[2]);
+                    System.out.println("GameSession: getBoard Called");
+                    sendBoard(player);
+
+                } else if(sA[1].equals("getID"))
+                {
+                    System.out.println("GameSession: getID Called");
+
+                }else if(sA[1].equals("getTurn"))
+                {
+                    System.out.println("GameSession: getTurn Called");
+                    sendTurn(player);
+                }
+                else if(sA[1].equals("setBoard"))
+                {
+                    System.out.println("GameSession: setBoard Called");
+                    receiveBoard(player);
+                }
+                else if(sA[1].equals("setTurn"))
+                {
+                    System.out.println("GameSession: setTurn Called");
+                    setTurn(player);
+                } else if(sA[1].equals("getPlayer"))
+                {
+                    System.out.println("GameSession: getPlayer Called");
+                    sendPlayer(player);
                 }
             }
             else if (sA[0].equals("Print"))
             {
                 System.out.println("GameSession: Print Called");
+                System.out.println(s);
             }
         }
     }
 
-    private void setPlayerName(String s)
-    {
-        if(player1Name == null)
-        {
-            player1Name = s;
-            Echo("GameSession: Set Player1Name to " + s);
-            GameSessionsServer.addUser(s);
+    private void sendBoard(int player) {
+
+        if (player == 1) {
+            player1.out.println(game.printBoardString());
+            player1.out.flush();
+        } else if (player == 2) {
+            player2.out.println(game.printBoardString());
+            player2.out.flush();
         }
-        else if(player2Name == null)
-        {
-            player2Name = s;
-            Echo("GameSession: Set Player2Name to " + s);
-            GameSessionsServer.addUser(s);
+    }
+
+    private void receiveBoard(int player) {
+        String s = null;
+        if (player == 1) {
+            try {
+                s = player1.in.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else if( player == 2) {
+            try {
+                s = player2.in.readLine();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        else{
-            Echo("Setname ERROR");
+        if( s != null) {
+            System.out.println("Board received is: " + s);
+            game.setBoard(s);
+        } else {
+            System.out.println("RECEIVEBOARDERROR");
+        }
+    }
+
+    private void sendTurn(int player) {
+        if (player == 1) {
+            if(playerTurn == 1) {
+                player1.out.println("true");
+            } else if (playerTurn == 2) {
+                player1.out.println("false");
+            }
+            player1.out.flush();
+        } else if (player == 2) {
+            if(playerTurn == 1) {
+                player2.out.println("false");
+            } else if (playerTurn == 2) {
+                player2.out.println("true");
+            }
+            player2.out.flush();
+        }
+    }
+
+    private void setTurn(int player) {
+        if (player == 1) {
+            playerTurn = 2;
+        } else if (player == 2) {
+            playerTurn = 1;
+        }
+    }
+
+    private void sendPlayer(int player) {
+        if (player == 1) {
+            player1.out.println("1");
+            player1.out.flush();
+        } else if (player == 2) {
+            player2.out.println("2");
+            player2.out.flush();
         }
     }
 }
