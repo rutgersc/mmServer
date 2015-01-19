@@ -12,7 +12,7 @@ import java.net.Socket;
 import static minor.game.GameSessionsServer.Echo;
 
 
-class GameSession extends Thread {
+class TicTacToeGameSession extends Thread {
 
     private TicTacToe game;
     private String gameId;
@@ -32,7 +32,7 @@ class GameSession extends Thread {
     private boolean activeSession = true;
     private int ID = 0;
 
-    GameSession(PlayerSession player1, PlayerSession player2, String gameId) {
+    TicTacToeGameSession(PlayerSession player1, PlayerSession player2, String gameId) {
         this.player1 = player1;
         this.player2 = player2;
         this.gameId = gameId;
@@ -48,15 +48,6 @@ class GameSession extends Thread {
             String s1;
             String s2;
 
-            s1 = player1.in.readLine();
-            parseCommand(1, s1);
-            s2 = player2.in.readLine();
-            parseCommand(2, s2);
-            //sendBoard(1);
-            //sendBoard(2);
-
-
-
             // Gameloop
             do {
                 try {
@@ -65,23 +56,6 @@ class GameSession extends Thread {
 
                     s1 = player1.in.readLine();
                     parseCommand(1, s1);
-                    s1 = "ERROR";
-                    System.out.println("p1 checked");
-                    s1 = player1.in.readLine();
-                    parseCommand(1, s1);
-                    s1 = "ERROR";
-                    System.out.println("p1 checked");
-                    s1 = player1.in.readLine();
-                    parseCommand(1, s1);
-
-                    s2 = player2.in.readLine();
-                    parseCommand(2, s2);
-                    s2 = "Print ERROR";
-                    System.out.println("p2 checked");
-                    s2 = player2.in.readLine();
-                    parseCommand(2, s2);
-                    s2 = "Print ERROR";
-                    System.out.println("p2 checked");
                     s2 = player2.in.readLine();
                     parseCommand(2, s2);
                     //parseCommand(s1);
@@ -108,40 +82,47 @@ class GameSession extends Thread {
         {
             if(sA[0].equals("Method"))
             {
-                System.out.println("GameSession: Method Called");
+                System.out.println("TicTacToeGameSession: Method Called");
                 if(sA[1].equals("getBoard"))
                 {
-                    System.out.println("GameSession: getBoard Called");
+                    System.out.println("TicTacToeGameSession: getBoard Called");
                     sendBoard(player);
 
                 } else if(sA[1].equals("getID"))
                 {
-                    System.out.println("GameSession: getID Called");
+                    System.out.println("TicTacToeGameSession: getID Called");
 
                 }else if(sA[1].equals("getTurn"))
                 {
-                    System.out.println("GameSession: getTurn Called");
+                    System.out.println("TicTacToeGameSession: getTurn Called");
                     sendTurn(player);
                 }
                 else if(sA[1].equals("setBoard"))
                 {
-                    System.out.println("GameSession: setBoard Called");
+                    System.out.println("TicTacToeGameSession: setBoard Called");
                     receiveBoard(player);
                 }
                 else if(sA[1].equals("setTurn"))
                 {
-                    System.out.println("GameSession: setTurn Called");
+                    System.out.println("TicTacToeGameSession: setTurn Called");
                     setTurn(player);
                 } else if(sA[1].equals("getPlayer"))
                 {
-                    System.out.println("GameSession: getPlayer Called");
+                    System.out.println("TicTacToeGameSession: getPlayer Called");
                     sendPlayer(player);
                 }
-            }
-            else if (sA[0].equals("Print"))
+            } else if (sA[0].equals("Print"))
             {
-                System.out.println("GameSession: Print Called");
+                System.out.println("TicTacToeGameSession: Print Called");
                 System.out.println(s);
+            } else if (sA[0].equals("Request"))
+            {
+                System.out.println(sA[1] + " Requests made.");
+                try {
+                    requestParser(player, Integer.parseInt(sA[1]));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -214,6 +195,21 @@ class GameSession extends Thread {
         } else if (player == 2) {
             player2.out.println("2");
             player2.out.flush();
+        }
+    }
+
+    private void requestParser(int player, int numberOfRequests) throws IOException {
+        if(player != 1 && player != 2 && numberOfRequests < 1)
+            System.out.println("REQUESTPARSER: Format error.");
+        String s;
+        for(int i = 0; i < numberOfRequests; i++) {
+            if(player == 1) {
+                s = player1.in.readLine();
+                parseCommand(1, s);
+            } else if(player == 2) {
+                s = player2.in.readLine();
+                parseCommand(2, s);
+            }
         }
     }
 }

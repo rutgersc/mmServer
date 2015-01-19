@@ -8,7 +8,6 @@ package minor.game;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.Socket;
 import java.net.URL;
 import java.util.ArrayList;
 
@@ -25,7 +24,7 @@ public class GameSessionsServer extends Thread {
     private static int port = 5000;
 
     private static ArrayList<String> userList;
-    private static ArrayList<GameSession> gameSessionList;
+    private static ArrayList<TicTacToeGameSession> gameSessionList;
     private static int IDCounter = 0;
     
     public GameSessionsServer() {
@@ -50,21 +49,18 @@ public class GameSessionsServer extends Thread {
         Main.guiC.echo("user 2: " + player2.playerData.username);
 
 
-        //TODO <----------------------- gamesessie wordt hier aangemaakt
-        //TODO <-----------------------
-        //TODO <-----------------------
-        //TODO <-----------------------
+
 
         String gameId = lobbySession.getGameId();
 
 
 
-        GameSession newGameSession = new GameSession(player1, player2, gameId);
-         newGameSession.start(); // Runnen?
+//        TicTacToeGameSession newGameSession = new TicTacToeGameSession(player1, player2, gameId);
+//         newGameSession.start(); // Runnen?
+        RockPaperScissorGameSession newGameSession = new RockPaperScissorGameSession(player1, player2, gameId);
+        newGameSession.start();
 
-        //TODO <-----------------------
-        //TODO <-----------------------
-        //TODO <----------------------- gamesessie wordt hier aangemaakt
+
 
     }
 
