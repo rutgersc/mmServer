@@ -1,5 +1,7 @@
 package minor.game;
 
+import java.io.IOException;
+
 /**
  * Created by Callan on 07/01/15.
  */
@@ -40,6 +42,31 @@ public class TicTacToe {
             }
             System.out.println();
             System.out.println("-------------");
+        }
+    }
+
+    public String printBoardString() {
+        String s = "";
+        // Loop through rows
+        for (int i = 0; i < 3; i++) {
+
+            // Loop through columns
+            for (int j = 0; j < 3; j++) {
+                s += board[i][j];
+            }
+        }
+        System.out.println("BOARDSRTING = " + s);
+        return s;
+    }
+
+    public void setBoard(String s) {
+        int count = 0;
+        for (int i = 0; i < 3; i++) {
+            // Loop through columns
+            for (int j = 0; j < 3; j++) {
+                board[i][j] = s.charAt(count);
+                count++;
+            }
         }
     }
 

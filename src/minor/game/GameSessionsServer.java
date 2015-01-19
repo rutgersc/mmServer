@@ -58,25 +58,9 @@ public class GameSessionsServer extends Thread {
         String gameId = lobbySession.getGameId();
 
 
-        try {
-            System.out.println("Sending bitches1");
-            player1.out.println("test");
-            player1.out.flush();
-            String response = player1.in.readLine();
-            System.out.println("Test1: " + response);
 
-            System.out.println("Sending bitches2");
-            player2.out.println("test");
-            player2.out.flush();
-            String response2 = player2.in.readLine();
-            System.out.println("Test2: " + response2);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-//        GameSession newGameSession = new GameSession(player1, player2, gameId);
-//         newGameSession.start(); // Runnen?
+        GameSession newGameSession = new GameSession(player1, player2, gameId);
+         newGameSession.start(); // Runnen?
 
         //TODO <-----------------------
         //TODO <-----------------------
