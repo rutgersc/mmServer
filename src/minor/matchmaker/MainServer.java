@@ -285,6 +285,10 @@ class RequestProcessor implements Runnable {
         return sb.toString();
     }
 
+    // *****************************************************************
+    //  Matchmaking Connection
+    // *****************************************************************
+
     public void handleConnection_searchGame(String sessionId, PlayerData playerData, BufferedReader in, PrintWriter out, Socket socket) throws IOException {
 
         GameLobbySession gameLobbySession = null;
@@ -301,7 +305,7 @@ class RequestProcessor implements Runnable {
             try {
                 request = in.readLine();
             } catch (IOException e) {
-                System.err.println("searchGame connection lost");
+                System.err.println(playerData.username + " - searchGame connection lost");
             }
 
             if(request == null) {
@@ -314,7 +318,8 @@ class RequestProcessor implements Runnable {
                 break;
             }
 
-            System.out.println("[" + playerData.username + "] SearchGame Request: " + request);
+            if(!request.equals("."))
+                System.out.println("[" + playerData.username + "] SearchGame Request: " + request);
 
             switch (request) {
                 case "startSearch":
