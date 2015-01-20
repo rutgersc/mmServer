@@ -56,8 +56,8 @@ public class GameSessionsServer extends Thread {
 
 
 //        TicTacToeGameSession newGameSession = new TicTacToeGameSession(player1, player2, gameId);
-//         newGameSession.start(); // Runnen?
         RockPaperScissorGameSession newGameSession = new RockPaperScissorGameSession(player1, player2, gameId);
+//        BucketGameGameSession newGameSession = new BucketGameGameSession(player1, player2, gameId);
         newGameSession.start();
 
 

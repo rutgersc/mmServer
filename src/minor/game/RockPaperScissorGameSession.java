@@ -54,9 +54,6 @@ public class RockPaperScissorGameSession extends Thread {
                     s2 = player2.in.readLine();
                     parseCommand(2, s2);
 
-                    if(choicePlayer1 != -1 && choicePlayer2 != -1) {
-                        checkWinner(choicePlayer1, choicePlayer2);
-                    }
 
                 } catch (Exception e) {
                 }
@@ -98,7 +95,8 @@ public class RockPaperScissorGameSession extends Thread {
                     hasOtherPlayerChosen(player);
                 } else if(sA[1].equals("setChoice")) {
                     setChoice(player, sA[2]);
-
+                } else if(sA[1].equals("checkWinner")) {
+                    checkWinner(player, choicePlayer1, choicePlayer2);
                 }
             } else if (sA[0].equals("Print"))
             {
@@ -151,7 +149,7 @@ public class RockPaperScissorGameSession extends Thread {
         }
     }
 
-    private void checkWinner(int choice1, int choice2) {
+    private void checkWinner(int player, int choice1, int choice2) {
         int winner = -1;
         switch (choice1){
             case ROCK:
@@ -197,10 +195,32 @@ public class RockPaperScissorGameSession extends Thread {
 
         switch(winner) {
             case WINNER_PLAYER1:
-                player1.out.println("You won!");
-                player1.out.flush();
-                player2.out.println("You lost!");
-                player2.out.flush();
+                if(player == 1) {
+                    player1.out.println("You won!");
+                    player1.out.flush();
+                } else if (player == 2) {
+                    player2.out.println("You lost!");
+                    player2.out.flush();
+                }
+                break;
+            case WINNER_PLAYER2:
+                if(player == 1) {
+                    player1.out.println("You lost!");
+                    player1.out.flush();
+                } else if(player == 2) {
+                    player2.out.println("You win!");
+                    player2.out.flush();
+                }
+                break;
+            case TIE:
+                if(player == 1) {
+                    player1.out.println("Tie!");
+                    player1.out.flush();
+                } else if(player == 2) {
+                    player2.out.println("Tie!");
+                    player2.out.flush();
+                }
+                break;
         }
     }
 }
