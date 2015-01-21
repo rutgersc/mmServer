@@ -201,6 +201,9 @@ class RequestProcessor implements Runnable {
     private void onPlayerDisconnected(String sessionId) {
         // remove from the searching list (
         matchMaker.removePlayer(sessionId);
+
+        // TODO: Remove player from session list
+        //MainServer.sessions.remove(sessionId);
     }
 
 
@@ -216,6 +219,7 @@ class RequestProcessor implements Runnable {
             if(request == null) {
                 System.out.println("------- Player " + playerData.username + " Disconnected from LOBBY");
                 Main.guiC.echo("------- Player " + playerData.username + " Disconnected  from LOBBY");
+
                 onPlayerDisconnected(sessionId);
                 break;
             }
